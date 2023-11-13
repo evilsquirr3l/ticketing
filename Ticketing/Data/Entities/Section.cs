@@ -1,6 +1,6 @@
 namespace Ticketing.Data.Entities;
 
-public sealed class Section
+public class Section
 {
     public Guid Id { get; set; }
     
@@ -8,7 +8,7 @@ public sealed class Section
     
     public Guid VenueId { get; set; }
     
-    public required Venue Venue { get; set; }
+    public virtual required Venue Venue { get; set; }
     
-    public required ICollection<Row> Rows { get; set; }
+    public virtual required ICollection<Row> Rows { get; set; }
 }

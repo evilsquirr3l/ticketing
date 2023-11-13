@@ -1,6 +1,6 @@
 namespace Ticketing.Data.Entities;
 
-public sealed class Seat
+public class Seat
 {
     public Guid Id { get; set; }
     
@@ -8,9 +8,9 @@ public sealed class Seat
     
     public Guid RowId { get; set; }
     
-    public required Row Row { get; set; }
+    public virtual required Row Row { get; set; }
     
     public Guid OfferId { get; set; }
     
-    public required Offer Offer { get; set; }
+    public virtual required Offer Offer { get; set; }
 }
