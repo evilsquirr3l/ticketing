@@ -23,4 +23,6 @@ public class TicketingDbContext : DbContext
     public required DbSet<Offer> Offers { get; set; }
 
     public required DbSet<Price> Prices { get; set; }
+
+    public required DbSet<Customer> Customers { get; set; }
 }
