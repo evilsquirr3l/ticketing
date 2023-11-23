@@ -7,6 +7,6 @@ public class Customer
     public required string Name { get; set; }
     
     public required string Email { get; set; }
-    
-    public virtual required ICollection<Offer> Offers { get; set; }
+
+    public virtual required ICollection<Cart> Carts { get; set; }
 }

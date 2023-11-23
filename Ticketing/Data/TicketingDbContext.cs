@@ -20,9 +20,15 @@ public class TicketingDbContext : DbContext
     
     public required DbSet<Event> Events { get; set; }
 
-    public required DbSet<Offer> Offers { get; set; }
+    public required DbSet<Cart> Carts { get; set; }
+    
+    public required DbSet<CartItem> CartItems { get; set; }
 
     public required DbSet<Price> Prices { get; set; }
 
     public required DbSet<Customer> Customers { get; set; }
+    
+    public required DbSet<SeatPrice> SeatPrices { get; set; }
+    
+    public required DbSet<Payment> Payments { get; set; }
 }
