@@ -6,5 +6,5 @@ public class Price
     
     public decimal Amount { get; set; }
 
-    public virtual required ICollection<SeatPrice> SeatPrices { get; set; }
+    public virtual ICollection<SeatPrice> SeatPrices { get; set; } = null!;
 }

@@ -8,7 +8,7 @@ public class Venue
 
     public Guid EventId { get; set; }
     
-    public virtual required Event Event { get; set; }
+    public virtual Event Event { get; set; } = null!;
     
-    public virtual required ICollection<Section> Sections { get; set; }
+    public virtual ICollection<Section> Sections { get; set; } = null!;
 }

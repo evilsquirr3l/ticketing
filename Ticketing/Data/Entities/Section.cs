@@ -8,7 +8,7 @@ public class Section
 
     public Guid VenueId { get; set; }
 
-    public virtual required Venue Venue { get; set; }
+    public virtual Venue Venue { get; set; } = null!;
     
-    public virtual required ICollection<Row> Rows { get; set; }
+    public virtual ICollection<Row> Rows { get; set; } = null!;
 }

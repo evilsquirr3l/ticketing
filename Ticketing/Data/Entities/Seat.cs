@@ -8,7 +8,7 @@ public class Seat
 
     public Guid RowId { get; set; }
 
-    public virtual required Row Row { get; set; }
+    public virtual Row Row { get; set; } = null!;
     
-    public virtual required ICollection<SeatPrice> SeatPrices { get; set; }
+    public virtual ICollection<SeatPrice> SeatPrices { get; set; } = null!;
 }

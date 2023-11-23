@@ -6,5 +6,5 @@ public class Event
     
     public required string Name { get; set; }
 
-    public virtual required ICollection<Venue> Venues { get; set; }
+    public virtual ICollection<Venue> Venues { get; set; } = null!;
 }

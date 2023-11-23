@@ -8,7 +8,7 @@ public class CartItem
     
     public Guid SeatPriceId { get; set; }
 
-    public virtual required Cart Cart { get; set; }
+    public virtual Cart Cart { get; set; } = null!;
     
-    public virtual required SeatPrice SeatPrice { get; set; }
+    public virtual SeatPrice SeatPrice { get; set; } = null!;
 }

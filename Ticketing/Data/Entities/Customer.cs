@@ -8,5 +8,5 @@ public class Customer
     
     public required string Email { get; set; }
 
-    public virtual required ICollection<Cart> Carts { get; set; }
+    public virtual ICollection<Cart> Carts { get; set; } = null!;
 }

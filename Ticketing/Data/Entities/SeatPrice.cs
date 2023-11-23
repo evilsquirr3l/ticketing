@@ -10,9 +10,9 @@ public class SeatPrice
     
     public Guid PriceId { get; set; }
 
-    public virtual required Seat Seat { get; set; }
+    public virtual Seat Seat { get; set; } = null!;
     
-    public virtual required Price Price { get; set; }
+    public virtual Price Price { get; set; } = null!;
     
-    public virtual required ICollection<CartItem> CartItems { get; set; }
+    public virtual ICollection<CartItem> CartItems { get; set; } = null!;
 }

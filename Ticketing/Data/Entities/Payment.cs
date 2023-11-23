@@ -10,5 +10,5 @@ public class Payment
 
     public Guid CartId { get; set; }
 
-    public virtual required Cart Cart { get; set; }
+    public virtual Cart Cart { get; set; } = null!;
 }
