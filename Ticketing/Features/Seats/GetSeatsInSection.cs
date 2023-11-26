@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Ticketing.Data;
@@ -19,16 +20,16 @@ public class GetSeatsInSection : ControllerBase
     
     [HttpGet]
     [Route("/events/{eventId:guid}/sections/{sectionId:guid}/seats")]
-    public async Task<IResult> GetAllSeats(Guid eventId, Guid sectionId)
+    public async Task<Results<NotFound, Ok<IEnumerable<SeatViewModel>>>> GetAllSeats(Guid eventId, Guid sectionId)
     {
         var result = await _mediator.Send(new GetAllSeatsQuery(eventId, sectionId));
 
-        return Results.Ok(result);
+        return result is null ? TypedResults.NotFound() : TypedResults.Ok(result);
     }
     
-    public record GetAllSeatsQuery(Guid EventId, Guid SectionId) : IRequest<IEnumerable<SeatViewModel>>;
+    public record GetAllSeatsQuery(Guid EventId, Guid SectionId) : IRequest<IEnumerable<SeatViewModel>?>;
     
-    public class GetAllSeatsQueryHandler : IRequestHandler<GetAllSeatsQuery, IEnumerable<SeatViewModel>>
+    public class GetAllSeatsQueryHandler : IRequestHandler<GetAllSeatsQuery, IEnumerable<SeatViewModel>?>
     {
         private readonly TicketingDbContext _dbContext;
 
@@ -37,8 +38,14 @@ public class GetSeatsInSection : ControllerBase
             _dbContext = dbContext;
         }
     
-        public async Task<IEnumerable<SeatViewModel>> Handle(GetAllSeatsQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<SeatViewModel>?> Handle(GetAllSeatsQuery request, CancellationToken cancellationToken)
         {
+            if (await _dbContext.Events.FindAsync(request.EventId) is null ||
+                await _dbContext.Sections.FindAsync(request.SectionId) is null)
+            {
+                return null;
+            }
+            
             var seats = await _dbContext.Manifests
                 .Include(x => x.Venue)
                 .Where(x => x.Venue.EventId == request.EventId)
