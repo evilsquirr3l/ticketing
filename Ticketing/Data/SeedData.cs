@@ -20,7 +20,7 @@ public static class MigrationManager
                 var row = new Row { Number = "Row 1", Section = section };
                 var seat = new Seat { SeatNumber = "Seat 1", Row = row };
                 var price = new Price { Amount = 100 };
-                var offer = new Offer { Event = event1, Seat = seat, OfferType = "VIP", };
+                var offer = new Offer { Event = event1, Seat = seat, OfferType = "VIP", Price = price };
                 var payment = new Payment { Amount = 100, Offer = offer, PaymentDate = DateTime.UtcNow};
                 var customer = new Customer { Name = "Jon Doe", Email = "example@gmail.com" };
                 var cart = new Cart { Customer = customer };
