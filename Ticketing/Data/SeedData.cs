@@ -11,15 +11,8 @@ public static class MigrationManager
         await using var context = scope.ServiceProvider.GetRequiredService<TicketingDbContext>();
         try
         {
-            if (context.Database.ProviderName is not "Microsoft.EntityFrameworkCore.InMemory" && await context.Database.EnsureCreatedAsync())
+            if (context.Database.ProviderName is not "Microsoft.EntityFrameworkCore.InMemory" && !await context.Venues.AnyAsync())
             {
-                var pendingMigrations = (await context.Database.GetPendingMigrationsAsync()).ToList();
-
-                if (pendingMigrations.Any())
-                {
-                    await context.Database.MigrateAsync();
-                }
-                
                 var venue = new Venue { Location = "New York" };
                 var event1 = new Event { Name = "Event 1", Venue = venue };
                 var manifest = new Manifest { Venue =  venue, Map = "maybe a byte array? maybe a json?" };
@@ -31,19 +24,8 @@ public static class MigrationManager
                 var payment = new Payment { Amount = 100, Offer = offer, PaymentDate = DateTime.UtcNow};
                 var customer = new Customer { Name = "Jon Doe", Email = "example@gmail.com" };
                 var cart = new Cart { Customer = customer };
-                var cartItems = new List<CartItem> { new() { Offer = offer, Cart = cart} };
-                await context.Venues.AddAsync(venue);
-                await context.Events.AddAsync(event1);
-                await context.Manifests.AddAsync(manifest);
-                await context.Sections.AddAsync(section);
-                await context.Rows.AddAsync(row);
-                await context.Seats.AddAsync(seat);
-                await context.Prices.AddAsync(price);
-                await context.Offers.AddAsync(offer);
-                await context.Payments.AddAsync(payment);
-                await context.Customers.AddAsync(customer);
-                await context.Carts.AddAsync(cart);
-                await context.CartItems.AddRangeAsync(cartItems);
+                var cartItem = new CartItem  { Offer = offer, Cart = cart };
+                await context.AddRangeAsync(venue, event1, manifest, section, row, seat, price, offer, payment, customer, cart, cartItem);
                 await context.SaveChangesAsync();
             }
         }

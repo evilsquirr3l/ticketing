@@ -12,8 +12,8 @@ using Ticketing.Data;
 namespace Ticketing.Migrations
 {
     [DbContext(typeof(TicketingDbContext))]
-    [Migration("20231123173215_UpdateEntityModel")]
-    partial class UpdateEntityModel
+    [Migration("20231126184527_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,6 +34,9 @@ namespace Ticketing.Migrations
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
@@ -50,14 +53,17 @@ namespace Ticketing.Migrations
                     b.Property<Guid>("CartId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("SeatPriceId")
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("OfferId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CartId");
 
-                    b.HasIndex("SeatPriceId");
+                    b.HasIndex("OfferId");
 
                     b.ToTable("CartItems");
                 });
@@ -71,6 +77,9 @@ namespace Ticketing.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -87,6 +96,9 @@ namespace Ticketing.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -94,6 +106,71 @@ namespace Ticketing.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("Ticketing.Data.Entities.Manifest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Map")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Manifests");
+                });
+
+            modelBuilder.Entity("Ticketing.Data.Entities.Offer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OfferType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PriceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SeatId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SectionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique();
+
+                    b.HasIndex("PriceId");
+
+                    b.HasIndex("SeatId");
+
+                    b.HasIndex("SectionId");
+
+                    b.ToTable("Offers", t =>
+                        {
+                            t.HasCheckConstraint("offer_section_seat_check", "(\"SectionId\" IS NOT NULL AND \"SeatId\" IS NULL) OR (\"SectionId\" IS NULL AND \"SeatId\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Payment", b =>
@@ -105,15 +182,13 @@ namespace Ticketing.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid>("CartId")
-                        .HasColumnType("uuid");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CartId");
 
                     b.ToTable("Payments");
                 });
@@ -127,6 +202,9 @@ namespace Ticketing.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.ToTable("Prices");
@@ -137,6 +215,9 @@ namespace Ticketing.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -158,6 +239,9 @@ namespace Ticketing.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("RowId")
                         .HasColumnType("uuid");
 
@@ -172,47 +256,25 @@ namespace Ticketing.Migrations
                     b.ToTable("Seats");
                 });
 
-            modelBuilder.Entity("Ticketing.Data.Entities.SeatPrice", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PriceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PriceType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("SeatId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PriceId");
-
-                    b.HasIndex("SeatId");
-
-                    b.ToTable("SeatPrices");
-                });
-
             modelBuilder.Entity("Ticketing.Data.Entities.Section", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ManifestId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("VenueId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("VenueId");
+                    b.HasIndex("ManifestId");
 
                     b.ToTable("Sections");
                 });
@@ -226,13 +288,23 @@ namespace Ticketing.Migrations
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("ManifestId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("EventId");
+                    b.HasIndex("EventId")
+                        .IsUnique();
+
+                    b.HasIndex("ManifestId")
+                        .IsUnique();
 
                     b.ToTable("Venues");
                 });
@@ -256,26 +328,48 @@ namespace Ticketing.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Ticketing.Data.Entities.SeatPrice", "SeatPrice")
+                    b.HasOne("Ticketing.Data.Entities.Offer", "Offer")
                         .WithMany("CartItems")
-                        .HasForeignKey("SeatPriceId")
+                        .HasForeignKey("OfferId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Cart");
 
-                    b.Navigation("SeatPrice");
+                    b.Navigation("Offer");
                 });
 
-            modelBuilder.Entity("Ticketing.Data.Entities.Payment", b =>
+            modelBuilder.Entity("Ticketing.Data.Entities.Offer", b =>
                 {
-                    b.HasOne("Ticketing.Data.Entities.Cart", "Cart")
-                        .WithMany()
-                        .HasForeignKey("CartId")
+                    b.HasOne("Ticketing.Data.Entities.Event", "Event")
+                        .WithMany("Offers")
+                        .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Cart");
+                    b.HasOne("Ticketing.Data.Entities.Payment", "Payment")
+                        .WithOne("Offer")
+                        .HasForeignKey("Ticketing.Data.Entities.Offer", "PaymentId");
+
+                    b.HasOne("Ticketing.Data.Entities.Price", null)
+                        .WithMany("Offers")
+                        .HasForeignKey("PriceId");
+
+                    b.HasOne("Ticketing.Data.Entities.Seat", "Seat")
+                        .WithMany("Offers")
+                        .HasForeignKey("SeatId");
+
+                    b.HasOne("Ticketing.Data.Entities.Section", "Section")
+                        .WithMany("Offers")
+                        .HasForeignKey("SectionId");
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("Seat");
+
+                    b.Navigation("Section");
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Row", b =>
@@ -300,45 +394,34 @@ namespace Ticketing.Migrations
                     b.Navigation("Row");
                 });
 
-            modelBuilder.Entity("Ticketing.Data.Entities.SeatPrice", b =>
-                {
-                    b.HasOne("Ticketing.Data.Entities.Price", "Price")
-                        .WithMany("SeatPrices")
-                        .HasForeignKey("PriceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Ticketing.Data.Entities.Seat", "Seat")
-                        .WithMany("SeatPrices")
-                        .HasForeignKey("SeatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Price");
-
-                    b.Navigation("Seat");
-                });
-
             modelBuilder.Entity("Ticketing.Data.Entities.Section", b =>
                 {
-                    b.HasOne("Ticketing.Data.Entities.Venue", "Venue")
+                    b.HasOne("Ticketing.Data.Entities.Manifest", "Manifest")
                         .WithMany("Sections")
-                        .HasForeignKey("VenueId")
+                        .HasForeignKey("ManifestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Venue");
+                    b.Navigation("Manifest");
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Venue", b =>
                 {
                     b.HasOne("Ticketing.Data.Entities.Event", "Event")
-                        .WithMany("Venues")
-                        .HasForeignKey("EventId")
+                        .WithOne("Venue")
+                        .HasForeignKey("Ticketing.Data.Entities.Venue", "EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ticketing.Data.Entities.Manifest", "Manifest")
+                        .WithOne("Venue")
+                        .HasForeignKey("Ticketing.Data.Entities.Venue", "ManifestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Event");
+
+                    b.Navigation("Manifest");
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Cart", b =>
@@ -353,12 +436,34 @@ namespace Ticketing.Migrations
 
             modelBuilder.Entity("Ticketing.Data.Entities.Event", b =>
                 {
-                    b.Navigation("Venues");
+                    b.Navigation("Offers");
+
+                    b.Navigation("Venue")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ticketing.Data.Entities.Manifest", b =>
+                {
+                    b.Navigation("Sections");
+
+                    b.Navigation("Venue")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ticketing.Data.Entities.Offer", b =>
+                {
+                    b.Navigation("CartItems");
+                });
+
+            modelBuilder.Entity("Ticketing.Data.Entities.Payment", b =>
+                {
+                    b.Navigation("Offer")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Price", b =>
                 {
-                    b.Navigation("SeatPrices");
+                    b.Navigation("Offers");
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Row", b =>
@@ -368,22 +473,14 @@ namespace Ticketing.Migrations
 
             modelBuilder.Entity("Ticketing.Data.Entities.Seat", b =>
                 {
-                    b.Navigation("SeatPrices");
-                });
-
-            modelBuilder.Entity("Ticketing.Data.Entities.SeatPrice", b =>
-                {
-                    b.Navigation("CartItems");
+                    b.Navigation("Offers");
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Section", b =>
                 {
-                    b.Navigation("Rows");
-                });
+                    b.Navigation("Offers");
 
-            modelBuilder.Entity("Ticketing.Data.Entities.Venue", b =>
-                {
-                    b.Navigation("Sections");
+                    b.Navigation("Rows");
                 });
 #pragma warning restore 612, 618
         }
