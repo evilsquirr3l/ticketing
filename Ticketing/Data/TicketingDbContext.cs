@@ -9,7 +9,14 @@ public class TicketingDbContext : DbContext
     {
         
     }
-    
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Offer>()
+            .ToTable(x => x.HasCheckConstraint("offer_section_seat_check",
+                "(\"SectionId\" IS NOT NULL AND \"SeatId\" IS NULL) OR (\"SectionId\" IS NULL AND \"SeatId\" IS NOT NULL)"));
+    }
+
     public required DbSet<Seat> Seats { get; set; }
     
     public required DbSet<Row> Rows { get; set; }
