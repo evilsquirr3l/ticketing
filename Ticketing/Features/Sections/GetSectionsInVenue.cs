@@ -8,11 +8,11 @@ namespace Ticketing.Features.Sections;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "Sections")]
-public class GetSections : ControllerBase
+public class GetSectionsInVenue : ControllerBase
 {
     private readonly IMediator _mediator;
 
-    public GetSections(IMediator mediator)
+    public GetSectionsInVenue(IMediator mediator)
     {
         _mediator = mediator;
     }
@@ -39,7 +39,9 @@ public class GetSections : ControllerBase
         public async Task<IEnumerable<SectionViewModel>> Handle(GetAllSectionsQuery request,
             CancellationToken cancellationToken)
         {
-            var sections = await _dbContext.Manifests.Include(x => x.Venue).Where(x => x.Venue.Id == request.VenueId)
+            var sections = await _dbContext.Manifests
+                .Include(x => x.Venue)
+                .Where(x => x.Venue.Id == request.VenueId)
                 .SelectMany(x => x.Sections)
                 .Include(x => x.Rows)
                 .ThenInclude(x => x.Seats)
