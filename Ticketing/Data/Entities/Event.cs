@@ -1,10 +1,13 @@
 namespace Ticketing.Data.Entities;
 
-public class Event
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+public class Event : BaseEntity
 {
-    public Guid Id { get; set; }
-    
     public required string Name { get; set; }
 
-    public virtual ICollection<Venue> Venues { get; set; } = null!;
+    public virtual Venue Venue { get; set; } = null!;
+
+    public virtual ICollection<Offer> Offers { get; set; } = null!;
 }

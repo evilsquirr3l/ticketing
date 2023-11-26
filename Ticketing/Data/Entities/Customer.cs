@@ -1,9 +1,7 @@
 namespace Ticketing.Data.Entities;
 
-public class Customer
+public class Customer : BaseEntity
 {
-    public Guid Id { get; set; }
-    
     public required string Name { get; set; }
     
     public required string Email { get; set; }

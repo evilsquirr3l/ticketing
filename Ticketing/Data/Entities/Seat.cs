@@ -1,14 +1,14 @@
 namespace Ticketing.Data.Entities;
 
-public class Seat
+public class Seat : BaseEntity
 {
-    public Guid Id { get; set; }
-    
     public required string SeatNumber { get; set; }
 
     public Guid RowId { get; set; }
-
-    public virtual Row Row { get; set; } = null!;
     
-    public virtual ICollection<SeatPrice> SeatPrices { get; set; } = null!;
+    public virtual Row Row { get; set; } = null!;
+
+    public virtual required ICollection<CartItem> CartItems { get; set; } = null!;
+    
+    public virtual required ICollection<Offer> Offers { get; set; } = null!;
 }

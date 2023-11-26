@@ -1,14 +1,14 @@
 namespace Ticketing.Data.Entities;
 
-public class Section
+public class Section : BaseEntity
 {
-    public Guid Id { get; set; }
-    
     public required string Name { get; set; }
 
-    public Guid VenueId { get; set; }
-
-    public virtual Venue Venue { get; set; } = null!;
+    public Guid ManifestId { get; set; }
     
+    public virtual Manifest Manifest { get; set; } = null!;
+
     public virtual ICollection<Row> Rows { get; set; } = null!;
+    
+    public virtual ICollection<Offer> Offers { get; set; } = null!;
 }
