@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ticketing.Data;
@@ -11,9 +12,11 @@ using Ticketing.Data;
 namespace Ticketing.Migrations
 {
     [DbContext(typeof(TicketingDbContext))]
-    partial class TicketingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231126151225_FixVenue")]
+    partial class FixVenue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,14 +56,14 @@ namespace Ticketing.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("OfferId")
+                    b.Property<Guid>("SeatId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CartId");
 
-                    b.HasIndex("OfferId");
+                    b.HasIndex("SeatId");
 
                     b.ToTable("CartItems");
                 });
@@ -300,8 +303,7 @@ namespace Ticketing.Migrations
                     b.HasIndex("EventId")
                         .IsUnique();
 
-                    b.HasIndex("ManifestId")
-                        .IsUnique();
+                    b.HasIndex("ManifestId");
 
                     b.ToTable("Venues");
                 });
@@ -325,15 +327,15 @@ namespace Ticketing.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Ticketing.Data.Entities.Offer", "Offer")
+                    b.HasOne("Ticketing.Data.Entities.Seat", "Seat")
                         .WithMany("CartItems")
-                        .HasForeignKey("OfferId")
+                        .HasForeignKey("SeatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Cart");
 
-                    b.Navigation("Offer");
+                    b.Navigation("Seat");
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Offer", b =>
@@ -411,8 +413,8 @@ namespace Ticketing.Migrations
                         .IsRequired();
 
                     b.HasOne("Ticketing.Data.Entities.Manifest", "Manifest")
-                        .WithOne("Venue")
-                        .HasForeignKey("Ticketing.Data.Entities.Venue", "ManifestId")
+                        .WithMany()
+                        .HasForeignKey("ManifestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -442,14 +444,6 @@ namespace Ticketing.Migrations
             modelBuilder.Entity("Ticketing.Data.Entities.Manifest", b =>
                 {
                     b.Navigation("Sections");
-
-                    b.Navigation("Venue")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Ticketing.Data.Entities.Offer", b =>
-                {
-                    b.Navigation("CartItems");
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Payment", b =>
@@ -470,6 +464,8 @@ namespace Ticketing.Migrations
 
             modelBuilder.Entity("Ticketing.Data.Entities.Seat", b =>
                 {
+                    b.Navigation("CartItems");
+
                     b.Navigation("Offers");
                 });
 

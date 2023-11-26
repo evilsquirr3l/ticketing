@@ -7,8 +7,6 @@ public class Seat : BaseEntity
     public Guid RowId { get; set; }
     
     public virtual Row Row { get; set; } = null!;
-
-    public virtual required ICollection<CartItem> CartItems { get; set; } = null!;
     
-    public virtual required ICollection<Offer> Offers { get; set; } = null!;
+    public virtual ICollection<Offer> Offers { get; set; } = null!;
 }

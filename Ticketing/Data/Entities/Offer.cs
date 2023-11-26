@@ -18,5 +18,7 @@ public class Offer : BaseEntity
     
     public virtual Event Event { get; set; } = null!;
     
-    public virtual Payment Payment { get; set; } = null!;
+    public virtual Payment? Payment { get; set; } = null!;
+    
+    public virtual ICollection<CartItem> CartItems { get; set; } = null!;
 }
