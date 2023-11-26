@@ -14,7 +14,7 @@ public static class MigrationManager
             if (context.Database.ProviderName is not "Microsoft.EntityFrameworkCore.InMemory" && !await context.Venues.AnyAsync())
             {
                 var venue = new Venue { Location = "New York" };
-                var event1 = new Event { Name = "Event 1", Venue = venue };
+                var event1 = new Event { Name = "Event 1", Venue = venue, Date = DateTime.UtcNow.AddDays(1), Description = "Tomorrow's disco!"};
                 var manifest = new Manifest { Venue =  venue, Map = "maybe a byte array? maybe a json?" };
                 var section = new Section { Name = "Section 1", Manifest = manifest };
                 var row = new Row { Number = "Row 1", Section = section };
