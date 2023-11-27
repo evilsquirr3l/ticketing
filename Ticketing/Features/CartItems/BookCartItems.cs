@@ -22,11 +22,11 @@ public class BookCartItems : ControllerBase
     
     [HttpPut]
     [Route("orders/carts/{cartId:guid}/book")]
-    public async Task<Results<Ok<PaymentViewModel>, NotFound>> Book(Guid cartId)
+    public async Task<Results<Created<PaymentViewModel>, NotFound>> Book(Guid cartId)
     {
         var payment = await _mediator.Send(new BookCartItemsCommand(cartId));
 
-        return payment is null ? TypedResults.NotFound() : TypedResults.Ok(payment);
+        return payment is null ? TypedResults.NotFound() : TypedResults.Created($"payments/{payment.Id}/complete", payment);
     }
     
     public record BookCartItemsCommand(Guid CartId) : IRequest<PaymentViewModel?>;
@@ -55,7 +55,6 @@ public class BookCartItems : ControllerBase
 
             var payment = new Payment
             {
-                PaymentDate = DateTime.UtcNow,
                 Amount = cartItems.Sum(x => x.Offer.Price.Amount),
             };
 
