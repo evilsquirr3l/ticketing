@@ -19,7 +19,7 @@ public class GetCartItems : ControllerBase
     }
     
     [HttpGet]
-    [Route("carts/{cartId:guid}")]
+    [Route("orders/carts/{cartId:guid}")]
     public async Task<Results<NotFound, Ok<IEnumerable<CartItemViewModel>>>> GetAllCartItems(Guid cartId)
     {
         var cartItems = await _mediator.Send(new GetAllCartItemsQuery(cartId));
