@@ -17,7 +17,7 @@ public class GetVenues : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet("api/venues")]
+    [HttpGet("venues")]
     public async Task<IResult> GetAllVenues(int skip, int take = 50)
     {
         var result = await _mediator.Send(new GetVenuesQuery(skip, take));

@@ -19,7 +19,7 @@ public class GetSeatsInSection : ControllerBase
     }
     
     [HttpGet]
-    [Route("/events/{eventId:guid}/sections/{sectionId:guid}/seats")]
+    [Route("events/{eventId:guid}/sections/{sectionId:guid}/seats")]
     public async Task<Results<NotFound, Ok<IEnumerable<SeatViewModel>>>> GetAllSeats(Guid eventId, Guid sectionId)
     {
         var result = await _mediator.Send(new GetAllSeatsQuery(eventId, sectionId));

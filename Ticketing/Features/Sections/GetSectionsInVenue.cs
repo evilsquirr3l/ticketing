@@ -18,7 +18,7 @@ public class GetSectionsInVenue : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet("api/{venueId:guid}/sections")]
+    [HttpGet("{venueId:guid}/sections")]
     public async Task<Results<Ok<IEnumerable<SectionViewModel>>, NotFound>> GetAllSections(Guid venueId)
     {
         var result = await _mediator.Send(new GetAllSectionsQuery(venueId));

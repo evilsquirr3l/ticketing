@@ -18,7 +18,7 @@ public class GetEvents : ControllerBase
     }
     
     [HttpGet]
-    [Route("api/events")]
+    [Route("events")]
     public async Task<IResult> GetAll(int skip, int take = 50)
     {
         var events = await _mediator.Send(new GetEventsQuery(skip, take));

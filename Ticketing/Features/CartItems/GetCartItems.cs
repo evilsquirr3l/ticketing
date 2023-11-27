@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Ticketing.Data;
 using Ticketing.Models;
 
-namespace Ticketing.Features.Carts;
+namespace Ticketing.Features.CartItems;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "CartItems")]
@@ -19,7 +19,7 @@ public class GetCartItems : ControllerBase
     }
     
     [HttpGet]
-    [Route("/carts/{cartId:guid}")]
+    [Route("carts/{cartId:guid}")]
     public async Task<Results<NotFound, Ok<IEnumerable<CartItemViewModel>>>> GetAllCartItems(Guid cartId)
     {
         var cartItems = await _mediator.Send(new GetAllCartItemsQuery(cartId));
