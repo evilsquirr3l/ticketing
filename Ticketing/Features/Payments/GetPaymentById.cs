@@ -15,7 +15,7 @@ public class GetPaymentById : ControllerBase
     {
         _mediator = mediator;
     }
-    
+
     [HttpGet]
     [Route("payments/{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
@@ -24,9 +24,9 @@ public class GetPaymentById : ControllerBase
 
         return payment is null ? NotFound() : Ok(payment);
     }
-    
+
     public record GetPaymentByIdQuery(Guid Id) : IRequest<PaymentViewModel?>;
-    
+
     public class GetPaymentByIdQueryHandler : IRequestHandler<GetPaymentByIdQuery, PaymentViewModel?>
     {
         private readonly TicketingDbContext _dbContext;
@@ -35,7 +35,7 @@ public class GetPaymentById : ControllerBase
         {
             _dbContext = dbContext;
         }
-    
+
         public async Task<PaymentViewModel?> Handle(GetPaymentByIdQuery request, CancellationToken cancellationToken)
         {
             var payment = await _dbContext.Payments.FindAsync(request.Id);

@@ -48,18 +48,38 @@ public class BookCartItems : ControllerBase
                 .Where(x => x.CartId == request.CartId)
                 .ToListAsync(cancellationToken: cancellationToken);
 
-            if (cartItems.Count == 0 || await _dbContext.Carts.FindAsync(request.CartId) is null)
+            if (await CartItemsAreNotFoundAsync(request, cartItems))
             {
                 return null;
             }
 
+            var payment = CreatePaymentAsync(cartItems);
+
+            await BookSeatsAsync(cartItems);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return new PaymentViewModel(payment.Id, payment.Amount, payment.PaymentDate);
+        }
+
+        private async Task<bool> CartItemsAreNotFoundAsync(BookCartItemsCommand request, List<CartItem> cartItems)
+        {
+            return cartItems.Count == 0 || await _dbContext.Carts.FindAsync(request.CartId) is null;
+        }
+
+        private Payment CreatePaymentAsync(IEnumerable<CartItem> cartItems)
+        {
             var payment = new Payment
             {
                 Amount = cartItems.Sum(x => x.Offer.Price.Amount),
             };
 
             _dbContext.Payments.Add(payment);
-            
+            return payment;
+        }
+
+        private async Task BookSeatsAsync(List<CartItem> cartItems)
+        {
             foreach (var cartItem in cartItems)
             {
                 var seat = await _dbContext.Seats.FindAsync(cartItem.Offer.SeatId);
@@ -68,10 +88,6 @@ public class BookCartItems : ControllerBase
                     seat.IsReserved = true;
                 }
             }
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            return new PaymentViewModel(payment.Id, payment.Amount, payment.PaymentDate);
         }
     }
 }

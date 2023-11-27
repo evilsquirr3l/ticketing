@@ -17,7 +17,7 @@ public class GetSeatsInSection : ControllerBase
     {
         _mediator = mediator;
     }
-    
+
     [HttpGet]
     [Route("events/{eventId:guid}/sections/{sectionId:guid}/seats")]
     public async Task<Results<NotFound, Ok<IEnumerable<SeatViewModel>>>> GetAllSeats(Guid eventId, Guid sectionId)
@@ -26,9 +26,9 @@ public class GetSeatsInSection : ControllerBase
 
         return result is null ? TypedResults.NotFound() : TypedResults.Ok(result);
     }
-    
+
     public record GetAllSeatsQuery(Guid EventId, Guid SectionId) : IRequest<IEnumerable<SeatViewModel>?>;
-    
+
     public class GetAllSeatsQueryHandler : IRequestHandler<GetAllSeatsQuery, IEnumerable<SeatViewModel>?>
     {
         private readonly TicketingDbContext _dbContext;
@@ -37,15 +37,15 @@ public class GetSeatsInSection : ControllerBase
         {
             _dbContext = dbContext;
         }
-    
-        public async Task<IEnumerable<SeatViewModel>?> Handle(GetAllSeatsQuery request, CancellationToken cancellationToken)
+
+        public async Task<IEnumerable<SeatViewModel>?> Handle(GetAllSeatsQuery request,
+            CancellationToken cancellationToken)
         {
-            if (await _dbContext.Events.FindAsync(request.EventId) is null ||
-                await _dbContext.Sections.FindAsync(request.SectionId) is null)
+            if (await EventAndSectionAreNotFoundAsync(request))
             {
                 return null;
             }
-            
+
             var seats = await _dbContext.Manifests
                 .Include(x => x.Venue)
                 .Where(x => x.Venue.EventId == request.EventId)
@@ -60,6 +60,12 @@ public class GetSeatsInSection : ControllerBase
                 new SeatViewModel(seat.Id, seat.SeatNumber));
 
             return seatsViewModel;
+        }
+
+        private async Task<bool> EventAndSectionAreNotFoundAsync(GetAllSeatsQuery request)
+        {
+            return await _dbContext.Events.FindAsync(request.EventId) is null ||
+                   await _dbContext.Sections.FindAsync(request.SectionId) is null;
         }
     }
 }

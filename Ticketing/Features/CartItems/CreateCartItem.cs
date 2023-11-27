@@ -40,9 +40,7 @@ public class CreateCartItem : ControllerBase
     
         public async Task<CartItemViewModel?> Handle(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
-            if (await _dbContext.Carts.FindAsync(request.CartId) is null ||
-                await _dbContext.Offers.FindAsync(request.OfferId) is null ||
-                await _dbContext.Events.FindAsync(request.EventId) is null)
+            if (await CartItemsAreNotFoundAsync(request))
             {
                 return null;
             }
@@ -58,6 +56,13 @@ public class CreateCartItem : ControllerBase
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId);
+        }
+
+        private async Task<bool> CartItemsAreNotFoundAsync(CreateCartItemCommand request)
+        {
+            return await _dbContext.Carts.FindAsync(request.CartId) is null ||
+                   await _dbContext.Offers.FindAsync(request.OfferId) is null ||
+                   await _dbContext.Events.FindAsync(request.EventId) is null;
         }
     }
 }
