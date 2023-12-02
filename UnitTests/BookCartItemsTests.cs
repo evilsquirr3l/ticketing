@@ -75,7 +75,7 @@ public class BookCartItemsTests
         var cartId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await AddCartAsync(cartId, dbContext);
+        await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
         var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext);
 
@@ -92,7 +92,7 @@ public class BookCartItemsTests
         var cartId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await AddCartAsync(cartId, dbContext);
+        await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
         var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext);
 
@@ -138,7 +138,7 @@ public class BookCartItemsTests
         Assert.That(result, Is.Null);
     }
 
-    private static async Task AddCartAsync(Guid cartId, TicketingDbContext dbContext)
+    private static Cart GetCartWithItems(Guid cartId)
     {
         var @event = new Event
         {
@@ -212,6 +212,6 @@ public class BookCartItemsTests
                 }
             }
         };
-        await dbContext.Carts.AddAsync(cart);
+        return cart;
     }
 }
