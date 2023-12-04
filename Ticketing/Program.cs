@@ -12,6 +12,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddResponseCaching();
 builder.Services.AddSwaggerGen(c =>
 {
     c.TagActionsBy(api =>
@@ -53,6 +54,8 @@ builder.Services.AddDbContextPool<TicketingDbContext>(x =>
     x.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
+
+app.UseResponseCaching();
 
 if (app.Environment.IsDevelopment())
 {
