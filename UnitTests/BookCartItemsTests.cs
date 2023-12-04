@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
 using Testcontainers.PostgreSql;
+using Ticketing.Constants;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
 using Ticketing.Features.CartItems;
@@ -16,7 +17,7 @@ public class BookCartItemsTests
 {
     private readonly PostgreSqlContainer _postgreSqlContainer = new PostgreSqlBuilder().Build();
     private DbContextOptions<TicketingDbContext> _dbContextOptions = null!;
-    private Mock<IOutputCacheStore> _store = new Mock<IOutputCacheStore>();
+    private Mock<IOutputCacheStore> _store = new();
 
     [OneTimeSetUp]
     public async Task Setup()
@@ -138,6 +139,22 @@ public class BookCartItemsTests
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
         Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task Handle_DatabaseHasValidCartWithItems_InvalidatesCacheWhenCalled()
+    {
+        var cartId = Guid.NewGuid();
+        await using var dbContext = new TicketingDbContext(_dbContextOptions);
+        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
+        await dbContext.SaveChangesAsync();
+        _store.Setup(x => x.EvictByTagAsync(Tags.Events, It.IsAny<CancellationToken>()));
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object);
+
+        await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
+
+        _store.Verify(x => x.EvictByTagAsync(Tags.Events, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private static Cart GetCartWithItems(Guid cartId)

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
+using Ticketing.Constants;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
 using Ticketing.Models;
@@ -56,12 +57,11 @@ public class BookCartItems : ControllerBase
                 return null;
             }
 
-            await _store.EvictByTagAsync("Events", cancellationToken);
+            await _store.EvictByTagAsync(Tags.Events, cancellationToken);
 
             var payment = CreatePaymentAsync(cartItems);
 
             await BookSeatsAsync(cartItems);
-
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return new PaymentViewModel(payment.Id, payment.Amount, payment.PaymentDate);

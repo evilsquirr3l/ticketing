@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
+using Ticketing.Constants;
 using Ticketing.Data;
 using Ticketing.Models;
 
@@ -9,7 +10,7 @@ namespace Ticketing.Features.Events;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "Events")]
-[OutputCache(Tags = new[] { "Events" })]
+[OutputCache(Tags = new[] { Tags.Events })]
 public class GetEvents : ControllerBase
 {
     private readonly IMediator _mediator;
