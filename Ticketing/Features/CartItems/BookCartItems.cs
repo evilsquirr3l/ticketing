@@ -72,6 +72,7 @@ public class BookCartItems : ControllerBase
             var payment = new Payment
             {
                 Amount = cartItems.Sum(x => x.Offer.Price.Amount),
+                PaymentDate = DateTime.UtcNow
             };
 
             _dbContext.Payments.Add(payment);

@@ -6,5 +6,5 @@ public class Cart : BaseEntity
     
     public virtual Customer Customer { get; set; } = null!;
 
-    public virtual ICollection<CartItem> CartItems { get; set; } = null!;
+    public virtual ICollection<CartItem>? CartItems { get; set; }
 }
