@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
@@ -34,10 +35,12 @@ public class BookCartItems : ControllerBase
     public class BookCartItemsCommandHandler : IRequestHandler<BookCartItemsCommand, PaymentViewModel?>
     {
         private readonly TicketingDbContext _dbContext;
+        private readonly IOutputCacheStore _store;
 
-        public BookCartItemsCommandHandler(TicketingDbContext dbContext)
+        public BookCartItemsCommandHandler(TicketingDbContext dbContext, IOutputCacheStore store)
         {
             _dbContext = dbContext;
+            _store = store;
         }
     
         public async Task<PaymentViewModel?> Handle(BookCartItemsCommand request, CancellationToken cancellationToken)
@@ -52,6 +55,8 @@ public class BookCartItems : ControllerBase
             {
                 return null;
             }
+
+            await _store.EvictByTagAsync("Events", cancellationToken);
 
             var payment = CreatePaymentAsync(cartItems);
 

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
@@ -15,6 +16,7 @@ public class BookCartItemsTests
 {
     private readonly PostgreSqlContainer _postgreSqlContainer = new PostgreSqlBuilder().Build();
     private DbContextOptions<TicketingDbContext> _dbContextOptions = null!;
+    private Mock<IOutputCacheStore> _store = new Mock<IOutputCacheStore>();
 
     [OneTimeSetUp]
     public async Task Setup()
@@ -77,7 +79,7 @@ public class BookCartItemsTests
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
@@ -94,7 +96,7 @@ public class BookCartItemsTests
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object);
 
         await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
         var seats = dbContext.Seats.ToList();
@@ -108,7 +110,7 @@ public class BookCartItemsTests
         var cartId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
@@ -131,7 +133,7 @@ public class BookCartItemsTests
             }
         });
         await dbContext.SaveChangesAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 

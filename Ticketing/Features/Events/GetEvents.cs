@@ -9,7 +9,7 @@ namespace Ticketing.Features.Events;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "Events")]
-[OutputCache]
+[OutputCache(Tags = new[] { "Events" })]
 public class GetEvents : ControllerBase
 {
     private readonly IMediator _mediator;
