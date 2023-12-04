@@ -12,7 +12,17 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddResponseCaching();
+builder.Services.AddOutputCache(opt =>
+    opt.DefaultExpirationTimeSpan = builder.Configuration.GetValue<TimeSpan>("RedisSettings:ExpirationInMinutes"))
+    .AddStackExchangeRedisOutputCache(options =>
+{
+    options.Configuration = builder.Configuration.GetValue<string>("RedisSettings:Configuration");
+    options.InstanceName = builder.Configuration.GetValue<string>("RedisSettings:InstanceName");
+});
+
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.TagActionsBy(api =>
@@ -66,6 +76,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseOutputCache();
 
 app.UseAuthorization();
 
