@@ -149,8 +149,9 @@ public class BookCartItemsTests
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
-        _store.Setup(x => x.EvictByTagAsync(Tags.Events, It.IsAny<CancellationToken>()));
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object);
+        var store = new Mock<IOutputCacheStore>();
+        store.Setup(x => x.EvictByTagAsync(Tags.Events, It.IsAny<CancellationToken>()));
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, store.Object);
 
         await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
