@@ -39,6 +39,7 @@ public class BookCartItemsTests
     public async Task TearDown()
     {
         await _postgreSqlContainer.DisposeAsync();
+        await _redisContainer.DisposeAsync();
         _httpClient.Dispose();
     }
 
