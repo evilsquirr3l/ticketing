@@ -56,7 +56,8 @@ public class CreateCartItem : ControllerBase
                 return null;
             }
 
-            await ThrowIfSeatIsReserved(request, cancellationToken);
+            await ThrowIfSeatIsReservedAsync(request, cancellationToken);
+            await ThrowIfOfferIsAlreadyInTheCartAsync(request, cancellationToken);
 
             var cartItem = new CartItem
             {
@@ -78,7 +79,7 @@ public class CreateCartItem : ControllerBase
                    await _dbContext.Events.FindAsync(request.EventId) is null;
         }
 
-        private async Task ThrowIfSeatIsReserved(CreateCartItemCommand request, CancellationToken cancellationToken)
+        private async Task ThrowIfSeatIsReservedAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
             var offer = await _dbContext.Offers
                 .Include(x => x.Seat)
@@ -87,6 +88,18 @@ public class CreateCartItem : ControllerBase
             if (offer!.Seat.IsReserved)
             {
                 throw new InvalidOperationException("Seat is already reserved.");
+            }
+        }
+        
+        private async Task ThrowIfOfferIsAlreadyInTheCartAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
+        {
+            var cart = await _dbContext.Carts
+                .Include(x => x.CartItems)
+                .FirstOrDefaultAsync(x => x.Id == request.CartId, cancellationToken: cancellationToken);
+
+            if (cart!.CartItems.Any(x => x.OfferId == request.OfferId))
+            {
+                throw new InvalidOperationException("Offer is already in the cart.");
             }
         }
     }
