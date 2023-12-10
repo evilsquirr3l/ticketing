@@ -89,7 +89,7 @@ public class CreateCartItemTests
         
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId), CancellationToken.None));
-        Assert.That(exception?.Message, Is.EqualTo("Offer is already in the cart."));
+        Assert.That(exception?.Message, Is.EqualTo("This offer is already in the cart."));
     }
     
     [Test]
