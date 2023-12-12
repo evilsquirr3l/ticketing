@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ticketing.Data;
@@ -11,9 +12,11 @@ using Ticketing.Data;
 namespace Ticketing.Migrations
 {
     [DbContext(typeof(TicketingDbContext))]
-    partial class TicketingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231126193711_UpdateEvent")]
+    partial class UpdateEvent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,7 +152,7 @@ namespace Ticketing.Migrations
                     b.Property<Guid?>("PaymentId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("PriceId")
+                    b.Property<Guid?>("PriceId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("SeatId")
@@ -189,7 +192,7 @@ namespace Ticketing.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("PaymentDate")
+                    b.Property<DateTime>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -244,9 +247,6 @@ namespace Ticketing.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsReserved")
                         .HasColumnType("boolean");
 
                     b.Property<Guid>("RowId")
@@ -358,11 +358,9 @@ namespace Ticketing.Migrations
                         .WithOne("Offer")
                         .HasForeignKey("Ticketing.Data.Entities.Offer", "PaymentId");
 
-                    b.HasOne("Ticketing.Data.Entities.Price", "Price")
+                    b.HasOne("Ticketing.Data.Entities.Price", null)
                         .WithMany("Offers")
-                        .HasForeignKey("PriceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PriceId");
 
                     b.HasOne("Ticketing.Data.Entities.Seat", "Seat")
                         .WithMany("Offers")
@@ -375,8 +373,6 @@ namespace Ticketing.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("Payment");
-
-                    b.Navigation("Price");
 
                     b.Navigation("Seat");
 

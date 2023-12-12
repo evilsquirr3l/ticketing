@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ticketing.Data;
@@ -11,9 +12,11 @@ using Ticketing.Data;
 namespace Ticketing.Migrations
 {
     [DbContext(typeof(TicketingDbContext))]
-    partial class TicketingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231126211430_AddPriceToOffer")]
+    partial class AddPriceToOffer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,7 +192,7 @@ namespace Ticketing.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("PaymentDate")
+                    b.Property<DateTime>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -244,9 +247,6 @@ namespace Ticketing.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsReserved")
                         .HasColumnType("boolean");
 
                     b.Property<Guid>("RowId")
