@@ -1,8 +1,11 @@
+using Azure.Messaging.ServiceBus;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.Options;
 using Ticketing.Constants;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
@@ -37,11 +40,13 @@ public class BookCartItems : ControllerBase
     {
         private readonly TicketingDbContext _dbContext;
         private readonly IOutputCacheStore _store;
+        private readonly ServiceBusSender _sender;
 
-        public BookCartItemsCommandHandler(TicketingDbContext dbContext, IOutputCacheStore store)
+        public BookCartItemsCommandHandler(TicketingDbContext dbContext, IOutputCacheStore store, IAzureClientFactory<ServiceBusSender> serviceBusSenderFactory, IOptions<ServiceBusSettings> settings)
         {
             _dbContext = dbContext;
             _store = store;
+            _sender = serviceBusSenderFactory.CreateClient(settings.Value.QueueName);
         }
     
         public async Task<PaymentViewModel?> Handle(BookCartItemsCommand request, CancellationToken cancellationToken)
@@ -63,6 +68,7 @@ public class BookCartItems : ControllerBase
 
             await BookSeatsAsync(cartItems);
             await _dbContext.SaveChangesAsync(cancellationToken);
+            await SendMessage($"Payment {payment.Id} has been created.");
 
             return new PaymentViewModel(payment.Id, payment.Amount, payment.PaymentDate);
         }
@@ -94,6 +100,13 @@ public class BookCartItems : ControllerBase
                     seat.IsReserved = true;
                 }
             }
+        }
+
+        private Task SendMessage(string message)
+        {
+            var serviceBusMessage = new ServiceBusMessage(message);
+
+            return _sender.SendMessageAsync(serviceBusMessage);
         }
     }
 }

@@ -1,8 +1,11 @@
+using Azure.Messaging.ServiceBus;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.OutputCaching.StackExchangeRedis;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Ticketing.Data;
 
 namespace IntegrationTests;
@@ -17,6 +20,8 @@ public class TestingWebApplicationFactory(string databaseConnectionString, strin
             SwapDbContext(services);
 
             SwapRedis(services);
+            
+            SwapServiceBus(services);
 
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
@@ -59,5 +64,22 @@ public class TestingWebApplicationFactory(string databaseConnectionString, strin
 
         services.AddDbContextPool<TicketingDbContext>(options =>
             options.UseNpgsql(databaseConnectionString));
+    }
+
+    private void SwapServiceBus(IServiceCollection services)
+    {
+        var serviceBus = services.SingleOrDefault(
+            d => d.ServiceType ==
+                 typeof(IAzureClientFactory<ServiceBusSender>));
+
+        if (serviceBus is not null)
+        {
+            services.Remove(serviceBus);
+        }
+
+        var mock = new Mock<IAzureClientFactory<ServiceBusSender>>();
+        var sender = new Mock<ServiceBusSender>();
+        mock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(sender.Object);
+        services.AddSingleton(mock.Object);
     }
 }

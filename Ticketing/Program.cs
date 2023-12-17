@@ -1,11 +1,18 @@
 using System.Text.Json.Serialization;
+using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
 using Microsoft.OpenApi.Models;
 using Ticketing.Data;
+using Ticketing.Models;
 using Vernou.Swashbuckle.HttpResultsAdapter;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ServiceBusSettings>(options =>
+    builder.Configuration.GetSection("ServiceBusSettings").Bind(options));
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -62,6 +69,25 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 
 builder.Services.AddDbContextPool<TicketingDbContext>(x =>
     x.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddAzureClients(clientBuilder =>
+{
+    clientBuilder
+        .AddServiceBusClientWithNamespace(builder.Configuration.GetValue<string>("ServiceBusSettings:Namespace"))
+        .WithCredential(new DefaultAzureCredential())
+        .ConfigureOptions(clientOptions =>
+        {
+            clientOptions.RetryOptions.Mode = ServiceBusRetryMode.Exponential;
+            clientOptions.RetryOptions.MaxRetries =
+                builder.Configuration.GetValue<int>("ServiceBusSettings:MaxRetries");
+            clientOptions.RetryOptions.TryTimeout =
+                TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("ServiceBusSettings:TryTimeout"));
+        });
+
+    var queueName = builder.Configuration.GetValue<string>("ServiceBusSettings:QueueName");
+    clientBuilder.AddClient<ServiceBusSender, ServiceBusClientOptions>((_, _, provider) =>
+        provider.GetService<ServiceBusClient>()?.CreateSender(queueName)!).WithName(queueName);
+});
 
 var app = builder.Build();
 
