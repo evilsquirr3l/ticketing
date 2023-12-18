@@ -3,6 +3,8 @@
     "Values": {
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-        "ServiceBusConnection__fullyQualifiedNamespace": "mentoring-ticketing.servicebus.windows.net"
+        "ServiceBusConnection__fullyQualifiedNamespace": "mentoring-ticketing.servicebus.windows.net",
+        "ResourceEndpoint": "https://mentoring.germany.communication.azure.com/",
+        "Sender": "DoNotReply@89b9c2e0-a940-4253-a8b3-5aeccaef9dce.azurecomm.net"
     }
 }
