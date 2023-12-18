@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTests", "Integra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedModels", "SharedModels\SharedModels.csproj", "{DF2B40DE-BEF5-4CFF-89A6-E3885AA8AF41}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationHandler", "NotificationHandler\NotificationHandler.csproj", "{8FD565FA-2F55-480D-A5F7-CD5992A06CC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{DF2B40DE-BEF5-4CFF-89A6-E3885AA8AF41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF2B40DE-BEF5-4CFF-89A6-E3885AA8AF41}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF2B40DE-BEF5-4CFF-89A6-E3885AA8AF41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FD565FA-2F55-480D-A5F7-CD5992A06CC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FD565FA-2F55-480D-A5F7-CD5992A06CC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FD565FA-2F55-480D-A5F7-CD5992A06CC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FD565FA-2F55-480D-A5F7-CD5992A06CC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
