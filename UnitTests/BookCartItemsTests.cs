@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
+using SharedModels;
 using Testcontainers.PostgreSql;
 using Ticketing.Constants;
 using Ticketing.Data;
@@ -185,11 +187,13 @@ public class BookCartItemsTests
         var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
-        var expectedMessage = $"Payment {result.Id} has been created.";
+        var customer = await dbContext.Customers.FirstAsync();
+        var expectedMessage = new Message(result!.Id, "Book", result.PaymentDate!.Value, customer.Email,
+            customer.Name, result.Amount);
 
         _sender.Verify(
             x => x.SendMessageAsync(
-                It.Is<ServiceBusMessage>(message => message.Body.ToString().Contains(expectedMessage)),
+                It.Is<ServiceBusMessage>(message => message.Body.ToObjectFromJson<Message>(null) == expectedMessage),
                 It.IsAny<CancellationToken>()), Times.Once);
     }
 
