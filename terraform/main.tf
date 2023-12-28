@@ -28,7 +28,7 @@ locals {
 
 resource "azurerm_resource_group" "rg" {
   name     = "${local.project_name}-rg"
-  location = "West Europe"
+  location = "North Europe"
 }
 
 resource "azurerm_service_plan" "sp" {
@@ -40,17 +40,12 @@ resource "azurerm_service_plan" "sp" {
 }
 
 resource "azurerm_linux_web_app" "app" {
+  depends_on          = [azurerm_postgresql_flexible_server_database.database]
   name                = "${local.project_name}-app"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_service_plan.sp.location
   service_plan_id     = azurerm_service_plan.sp.id
   https_only          = true
-
-  site_config {
-    application_stack {
-      dotnet_version = "8.0"
-    }
-  }
 
   webdeploy_publish_basic_authentication_enabled = false
   zip_deploy_file                                = local.ticketing_zip_deploy_file
@@ -59,4 +54,40 @@ resource "azurerm_linux_web_app" "app" {
     WEBSITE_RUN_FROM_PACKAGE       = 1
     SCM_DO_BUILD_DURING_DEPLOYMENT = true
   }
+
+  site_config {
+    application_stack {
+      dotnet_version = "8.0"
+    }
+  }
+
+  connection_string {
+    name  = "DefaultConnection"
+    type  = "PostgreSQL"
+    value = "Host=${azurerm_postgresql_flexible_server.database_server.fqdn};Port=5432;Database=${azurerm_postgresql_flexible_server_database.database.name};Username=${azurerm_postgresql_flexible_server.database_server.administrator_login};Password=${azurerm_postgresql_flexible_server.database_server.administrator_password}"
+  }
+}
+
+resource "azurerm_postgresql_flexible_server" "database_server" {
+  name                   = "${local.project_name}-psqlflexibleserver"
+  resource_group_name    = azurerm_resource_group.rg.name
+  location               = azurerm_resource_group.rg.location
+  version                = "16"
+  administrator_login    = var.login
+  administrator_password = var.password
+  storage_mb             = 32768
+  sku_name               = "B_Standard_B2ms"
+  zone                   = "1"
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all_azure_ips" {
+  server_id           = azurerm_postgresql_flexible_server.database_server.id
+  name                = "AllowAllWindowsAzureIps"
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+
+resource "azurerm_postgresql_flexible_server_database" "database" {
+  name      = "${local.project_name}-db"
+  server_id = azurerm_postgresql_flexible_server.database_server.id
 }
