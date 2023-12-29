@@ -64,11 +64,12 @@ resource "azurerm_linux_web_app" "app" {
   connection_string {
     name  = "DefaultConnection"
     type  = "PostgreSQL"
-    value = "Host=${azurerm_postgresql_flexible_server.database_server.fqdn};Port=5432;Database=${azurerm_postgresql_flexible_server_database.database.name};Username=${azurerm_postgresql_flexible_server.database_server.administrator_login};Password=${azurerm_postgresql_flexible_server.database_server.administrator_password}"
+    value = "Host=${azurerm_postgresql_flexible_server.database_server.fqdn};Port=5432;Database=${azurerm_postgresql_flexible_server_database.database.name};Username=${azurerm_postgresql_flexible_server.database_server.administrator_login};Password=${azurerm_postgresql_flexible_server.database_server.administrator_password};SslMode=Require;"
   }
 }
 
 resource "azurerm_postgresql_flexible_server" "database_server" {
+  //to connect with PdAdmin, set SSL Mode to "Require"
   name                   = "${local.project_name}-psqlflexibleserver"
   resource_group_name    = azurerm_resource_group.rg.name
   location               = azurerm_resource_group.rg.location
@@ -85,6 +86,17 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all_azure_ips
   name                = "AllowAllWindowsAzureIps"
   start_ip_address    = "0.0.0.0"
   end_ip_address      = "0.0.0.0"
+}
+
+data "http" "myip" {
+  url = "https://ipv4.icanhazip.com"
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_my_ip" {
+  server_id           = azurerm_postgresql_flexible_server.database_server.id
+  name                = "AllowMyIp"
+  start_ip_address    = chomp(data.http.myip.body)
+  end_ip_address      = chomp(data.http.myip.body)
 }
 
 resource "azurerm_postgresql_flexible_server_database" "database" {

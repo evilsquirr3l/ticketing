@@ -68,7 +68,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 builder.Services.AddDbContextPool<TicketingDbContext>(x =>
-    x.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    x.UseNpgsql(builder.Configuration.GetValue<string>("POSTGRESQLCONNSTR_DefaultConnection")));
 
 builder.Services.AddAzureClients(clientBuilder =>
 {
