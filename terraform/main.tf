@@ -53,6 +53,7 @@ resource "azurerm_linux_web_app" "app" {
   app_settings = {
     WEBSITE_RUN_FROM_PACKAGE       = 1
     SCM_DO_BUILD_DURING_DEPLOYMENT = true
+    CacheExpirationInMinutes       = 5
   }
 
   site_config {
@@ -62,9 +63,15 @@ resource "azurerm_linux_web_app" "app" {
   }
 
   connection_string {
-    name  = "DefaultConnection"
+    name  = "DatabaseConnection"
     type  = "PostgreSQL"
     value = "Host=${azurerm_postgresql_flexible_server.database_server.fqdn};Port=5432;Database=${azurerm_postgresql_flexible_server_database.database.name};Username=${azurerm_postgresql_flexible_server.database_server.administrator_login};Password=${azurerm_postgresql_flexible_server.database_server.administrator_password};SslMode=Require;"
+  }
+
+  connection_string {
+    name  = "RedisConnection"
+    type  = "RedisCache"
+    value = azurerm_redis_cache.redis.primary_connection_string
   }
 }
 
@@ -82,10 +89,10 @@ resource "azurerm_postgresql_flexible_server" "database_server" {
 }
 
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all_azure_ips" {
-  server_id           = azurerm_postgresql_flexible_server.database_server.id
-  name                = "AllowAllWindowsAzureIps"
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "0.0.0.0"
+  server_id        = azurerm_postgresql_flexible_server.database_server.id
+  name             = "AllowAllWindowsAzureIps"
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
 }
 
 data "http" "myip" {
@@ -93,13 +100,24 @@ data "http" "myip" {
 }
 
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_my_ip" {
-  server_id           = azurerm_postgresql_flexible_server.database_server.id
-  name                = "AllowMyIp"
-  start_ip_address    = chomp(data.http.myip.body)
-  end_ip_address      = chomp(data.http.myip.body)
+  server_id        = azurerm_postgresql_flexible_server.database_server.id
+  name             = "AllowMyIp"
+  start_ip_address = chomp(data.http.myip.response_body)
+  end_ip_address   = chomp(data.http.myip.response_body)
 }
 
 resource "azurerm_postgresql_flexible_server_database" "database" {
   name      = "${local.project_name}-db"
   server_id = azurerm_postgresql_flexible_server.database_server.id
+}
+
+resource "azurerm_redis_cache" "redis" {
+  name                = "${local.project_name}-redis-unique-name"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  capacity            = 1
+  family              = "C"
+  sku_name            = "Standard"
+  enable_non_ssl_port = false
+  minimum_tls_version = "1.2"
 }

@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<ServiceBusSettings>(options =>
     builder.Configuration.GetSection("ServiceBusSettings").Bind(options));
+var cacheExpiration = builder.Configuration.GetValue<TimeSpan>("CacheExpirationInMinutes");
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -21,14 +22,11 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddResponseCaching();
-builder.Services.AddOutputCache(opt =>
-    opt.DefaultExpirationTimeSpan = builder.Configuration.GetValue<TimeSpan>("RedisSettings:ExpirationInMinutes"))
+builder.Services.AddOutputCache(opt => opt.DefaultExpirationTimeSpan = cacheExpiration)
     .AddStackExchangeRedisOutputCache(options =>
-{
-    options.Configuration = builder.Configuration.GetValue<string>("RedisSettings:Configuration");
-    options.InstanceName = builder.Configuration.GetValue<string>("RedisSettings:InstanceName");
-});
-
+    {
+        options.Configuration = builder.Configuration.GetValue<string>("RedisCacheCONNSTR_RedisConnection");
+    });
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -68,7 +66,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 builder.Services.AddDbContextPool<TicketingDbContext>(x =>
-    x.UseNpgsql(builder.Configuration.GetValue<string>("POSTGRESQLCONNSTR_DefaultConnection")));
+    x.UseNpgsql(builder.Configuration.GetValue<string>("POSTGRESQLCONNSTR_DatabaseConnection")));
 
 builder.Services.AddAzureClients(clientBuilder =>
 {
