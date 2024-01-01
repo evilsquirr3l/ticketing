@@ -65,7 +65,7 @@ resource "azurerm_linux_web_app" "app" {
   connection_string {
     name  = "DatabaseConnection"
     type  = "PostgreSQL"
-    value = "Host=${azurerm_postgresql_flexible_server.database_server.fqdn};Port=5432;Database=${azurerm_postgresql_flexible_server_database.database.name};Username=${azurerm_postgresql_flexible_server.database_server.administrator_login};Password=${azurerm_postgresql_flexible_server.database_server.administrator_password};SslMode=Require;"
+    value = "Host=${azurerm_postgresql_flexible_server.database_server.fqdn};Port=5432;Database=${azurerm_postgresql_flexible_server_database.database.name};Username=${var.login};Password=${var.password};SslMode=Require;"
   }
 
   connection_string {
