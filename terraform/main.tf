@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "3.85.0"
     }
+    azapi = {
+      source  = "azure/azapi"
+      version = "1.11.0"
+    }
   }
 }
 
@@ -120,4 +124,61 @@ resource "azurerm_redis_cache" "redis" {
   sku_name            = "Standard"
   enable_non_ssl_port = false
   minimum_tls_version = "1.2"
+}
+
+resource "azurerm_email_communication_service" "email_communication_service" {
+  name                = "${local.project_name}-emailcommunicationservice"
+  resource_group_name = azurerm_resource_group.rg.name
+  data_location       = "Europe"
+}
+
+resource "azapi_resource" "email_communication_service_domain" {
+  //this is not yet supported by Terraform, so we use azapi_resource
+  // https://learn.microsoft.com/en-us/azure/templates/microsoft.communication/emailservices/domains?pivots=deployment-language-terraform#domainproperties-2
+  type      = "Microsoft.Communication/emailServices/domains@2023-04-01-preview"
+  name      = "AzureManagedDomain"
+  location  = "global"
+  parent_id = azurerm_email_communication_service.email_communication_service.id
+
+  body = jsonencode({
+    properties = {
+      domainManagement       = "AzureManaged"
+      userEngagementTracking = "Disabled"
+    }
+  })
+}
+
+resource "azapi_resource" "email_communication_service_domain_sender_username" {
+  //this is also not yet supported by Terraform
+  // https://github.com/hashicorp/terraform-provider-azurerm/issues/22549
+  type      = "Microsoft.Communication/emailServices/domains/senderUsernames@2023-04-01-preview"
+  name      = local.project_name
+  parent_id = azapi_resource.email_communication_service_domain.id
+  body      = jsonencode({
+    properties = {
+      displayName = local.project_name
+      username    = local.project_name
+    }
+  })
+}
+
+data "azurerm_subscription" "current" {
+}
+
+resource "azapi_resource" "azurerm_communication_service" {
+  //guess what? not yet supported by Terraform
+  // https://github.com/hashicorp/terraform-provider-azurerm/issues/22995
+  // https://learn.microsoft.com/en-us/azure/templates/microsoft.communication/communicationservices?pivots=deployment-language-terraform
+  type      = "Microsoft.Communication/communicationServices@2023-04-01-preview"
+  name      = "${local.project_name}-az-communication-service"
+  location  = "global"
+  parent_id = azurerm_resource_group.rg.id
+  body      = jsonencode({
+    properties = {
+      dataLocation  = "Europe"
+      linkedDomains = [
+        "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${azurerm_resource_group.rg.name}/providers/Microsoft.Communication/emailServices/${azurerm_email_communication_service.email_communication_service.name}/domains/${azapi_resource.email_communication_service_domain.name}"
+      ]
+    }
+  })
 }
