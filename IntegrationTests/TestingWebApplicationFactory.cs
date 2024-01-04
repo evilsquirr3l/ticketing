@@ -47,7 +47,6 @@ public class TestingWebApplicationFactory(string databaseConnectionString, strin
             .AddStackExchangeRedisOutputCache(options =>
             {
                 options.Configuration = redisConnectionString;
-                options.InstanceName = "Ticketing";
             });
     }
 

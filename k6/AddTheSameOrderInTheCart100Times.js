@@ -18,7 +18,7 @@ export default function () {
         'accept': 'application/json'
     };
 
-    let response = http.post('http://localhost:5161/orders/carts/f10a7cf0-e7a4-4d87-99c8-df37a94135f6', payload, { headers: headers });
+    let response = http.post('https://localhost:7040/orders/carts/f10a7cf0-e7a4-4d87-99c8-df37a94135f6', payload, { headers: headers });
 
     check(response, { 'status was 201': (r) => r.status === 201 });
 }
