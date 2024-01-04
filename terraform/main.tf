@@ -182,3 +182,15 @@ resource "azapi_resource" "azurerm_communication_service" {
     }
   })
 }
+
+resource "azurerm_servicebus_namespace" "namespace" {
+  name                = "${local.project_name}-namespace"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "Standard"
+}
+
+resource "azurerm_servicebus_queue" "queue" {
+  name         = "${local.project_name}_servicebus_queue"
+  namespace_id = azurerm_servicebus_namespace.namespace.id
+}
