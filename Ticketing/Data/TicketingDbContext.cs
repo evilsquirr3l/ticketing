@@ -17,27 +17,27 @@ public class TicketingDbContext : DbContext
                 "(\"SectionId\" IS NOT NULL AND \"SeatId\" IS NULL) OR (\"SectionId\" IS NULL AND \"SeatId\" IS NOT NULL)"));
     }
 
-    public required DbSet<Seat> Seats { get; set; }
-    
-    public required DbSet<Row> Rows { get; set; }
-    
-    public required DbSet<Section> Sections { get; set; }
-    
-    public required DbSet<Venue> Venues { get; set; }
-    
-    public required DbSet<Event> Events { get; set; }
+    public DbSet<Seat> Seats { get; set; } = null!;
 
-    public required DbSet<Cart> Carts { get; set; }
-    
-    public required DbSet<CartItem> CartItems { get; set; }
+    public DbSet<Row> Rows { get; set; } = null!;
 
-    public required DbSet<Price> Prices { get; set; }
+    public DbSet<Section> Sections { get; set; } = null!;
 
-    public required DbSet<Customer> Customers { get; set; }
-    
-    public required DbSet<Payment> Payments { get; set; }
-    
-    public required DbSet<Offer> Offers { get; set; }
-    
-    public required DbSet<Manifest> Manifests { get; set; }
+    public DbSet<Venue> Venues { get; set; } = null!;
+
+    public DbSet<Event> Events { get; set; } = null!;
+
+    public DbSet<Cart> Carts { get; set; } = null!;
+
+    public DbSet<CartItem> CartItems { get; set; } = null!;
+
+    public DbSet<Price> Prices { get; set; } = null!;
+
+    public DbSet<Customer> Customers { get; set; } = null!;
+
+    public DbSet<Payment> Payments { get; set; } = null!;
+
+    public DbSet<Offer> Offers { get; set; } = null!;
+
+    public DbSet<Manifest> Manifests { get; set; } = null!;
 }
