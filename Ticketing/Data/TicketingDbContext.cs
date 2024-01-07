@@ -15,6 +15,10 @@ public class TicketingDbContext : DbContext
         modelBuilder.Entity<Offer>()
             .ToTable(x => x.HasCheckConstraint("offer_section_seat_check",
                 "(\"SectionId\" IS NOT NULL AND \"SeatId\" IS NULL) OR (\"SectionId\" IS NULL AND \"SeatId\" IS NOT NULL)"));
+        
+        modelBuilder.Entity<CartItem>()
+            .HasIndex(ci => new { ci.CartId, ci.OfferId })
+            .IsUnique();
     }
 
     public DbSet<Seat> Seats { get; set; } = null!;
