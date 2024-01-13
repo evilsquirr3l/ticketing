@@ -21,13 +21,20 @@ provider "azurerm" {
 
 locals {
   project_name       = "ticketing"
+  azurerm_communication_service_name = "${local.project_name}-az-communication-service"
+  
   #run the commands below to get it (for macOS / linux):
   #dotnet publish ./Ticketing/Ticketing.csproj -c Release
   #zip -j ticketing.zip ./Ticketing/bin/Release/net8.0/publish/*
   ticketing_zip_path = "../ticketing.zip"
 
+  #dotnet publish ./NotificationHandler/NotificationHandler.csproj -c Release
+  #zip -j NotificationHandler.zip ./NotificationHandler/bin/Release/net8.0/publish/*
+  notificationHandler_zip_path = "../NotificationHandler.zip"
+
   #throw an error if file doesn't exist
-  ticketing_zip_deploy_file = fileexists(local.ticketing_zip_path) ? local.ticketing_zip_path : [][0]
+  ticketing_zip_deploy_file           = fileexists(local.ticketing_zip_path) ? local.ticketing_zip_path : [][0]
+  notificationHandler_zip_deploy_file = fileexists(local.notificationHandler_zip_path) ? local.notificationHandler_zip_path : [][0]
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -160,6 +167,8 @@ resource "azapi_resource" "email_communication_service_domain_sender_username" {
       username    = local.project_name
     }
   })
+  
+  response_export_values = ["*"]
 }
 
 data "azurerm_subscription" "current" {
@@ -170,7 +179,7 @@ resource "azapi_resource" "azurerm_communication_service" {
   // https://github.com/hashicorp/terraform-provider-azurerm/issues/22995
   // https://learn.microsoft.com/en-us/azure/templates/microsoft.communication/communicationservices?pivots=deployment-language-terraform
   type      = "Microsoft.Communication/communicationServices@2023-04-01-preview"
-  name      = "${local.project_name}-az-communication-service"
+  name      = local.azurerm_communication_service_name
   location  = "global"
   parent_id = azurerm_resource_group.rg.id
   body      = jsonencode({
@@ -193,4 +202,49 @@ resource "azurerm_servicebus_namespace" "namespace" {
 resource "azurerm_servicebus_queue" "queue" {
   name         = "${local.project_name}_servicebus_queue"
   namespace_id = azurerm_servicebus_namespace.namespace.id
+}
+
+resource "azurerm_storage_account" "storage" {
+  name                     = "${local.project_name}storage"
+  resource_group_name      = azurerm_resource_group.rg.name
+  location                 = azurerm_resource_group.rg.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+resource "azurerm_linux_function_app" "function" {
+  name                = "${local.project_name}-linux-function-app"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+
+  storage_account_name       = azurerm_storage_account.storage.name
+  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
+  service_plan_id            = azurerm_service_plan.sp.id
+
+  webdeploy_publish_basic_authentication_enabled = false
+  zip_deploy_file                                = local.notificationHandler_zip_deploy_file
+
+  app_settings = {
+    WEBSITE_RUN_FROM_PACKAGE                      = 1
+    SCM_DO_BUILD_DURING_DEPLOYMENT                = true
+    ENABLE_ORYX_BUILD                             = true
+    ServiceBusConnection__fullyQualifiedNamespace = azurerm_servicebus_namespace.namespace.default_primary_connection_string
+    ResourceEndpoint                              = "https://${local.azurerm_communication_service_name}.${azurerm_email_communication_service.email_communication_service.data_location}.communication.azure.com"
+    Sender                                        = azapi_resource.email_communication_service_domain_sender_username.output
+  }
+
+  site_config {
+    application_stack {
+      dotnet_version              = "8.0"
+      use_dotnet_isolated_runtime = true
+    }
+  }
+}
+
+output "sender_username" {
+  value = azapi_resource.email_communication_service_domain_sender_username.output
+}
+
+output "resource_endpoint" {
+  value = "https://${local.azurerm_communication_service_name}.${azurerm_email_communication_service.email_communication_service.data_location}.communication.azure.com"
 }
