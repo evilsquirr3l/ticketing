@@ -8,6 +8,7 @@ namespace Ticketing.Features.Venues;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "Venues")]
+[ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any)]
 public class GetVenues : ControllerBase
 {
     private readonly IMediator _mediator;
