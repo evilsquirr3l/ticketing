@@ -200,6 +200,7 @@ resource "azurerm_servicebus_namespace" "namespace" {
 }
 
 resource "azurerm_servicebus_queue" "queue" {
+  //should be the same as in NotificationHandler/ServiceBusQueueTrigger.cs, in the attribute [ServiceBusTrigger]
   name         = "${local.project_name}_servicebus_queue"
   namespace_id = azurerm_servicebus_namespace.namespace.id
 }
@@ -221,7 +222,22 @@ resource "azurerm_linux_function_app" "function" {
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
   service_plan_id            = azurerm_service_plan.sp.id
 
-  webdeploy_publish_basic_authentication_enabled = false
+  identity {
+    type = "SystemAssigned"
+  }
+  
+  zip_deploy_file = local.notificationHandler_zip_deploy_file
+
+  app_settings = {
+    WEBSITE_RUN_FROM_PACKAGE                      = 1
+    SCM_DO_BUILD_DURING_DEPLOYMENT                = true
+    ENABLE_ORYX_BUILD                             = true
+    AzureWebJobsStorage                           = azurerm_storage_account.storage.primary_connection_string
+    FUNCTIONS_WORKER_RUNTIME                      = "dotnet-isolated"
+    ServiceBusConnection__fullyQualifiedNamespace = "${azurerm_servicebus_namespace.namespace.name}.servicebus.windows.net"
+    ResourceEndpoint                              = "https://${local.azurerm_communication_service_name}.${azurerm_email_communication_service.email_communication_service.data_location}.communication.azure.com/"
+    Sender                                        = "${local.project_name}@${jsondecode(azapi_resource.email_communication_service_domain.output).properties.fromSenderDomain}"
+  }
 
   site_config {
     application_stack {
@@ -231,3 +247,8 @@ resource "azurerm_linux_function_app" "function" {
   }
 }
 
+resource "azurerm_role_assignment" "allow_function_to_read_service_bus" {
+  scope                = azurerm_servicebus_namespace.namespace.id
+  role_definition_name = "Azure Service Bus Data Receiver"
+  principal_id         = azurerm_linux_function_app.function.identity[0].principal_id
+}
