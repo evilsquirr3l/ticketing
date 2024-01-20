@@ -20,9 +20,9 @@ provider "azurerm" {
 }
 
 locals {
-  project_name       = "ticketing"
+  project_name                       = "ticketing"
   azurerm_communication_service_name = "${local.project_name}-az-communication-service"
-  
+
   #run the commands below to get it (for macOS / linux):
   #dotnet publish ./Ticketing/Ticketing.csproj -c Release
   #zip -j ticketing.zip ./Ticketing/bin/Release/net8.0/publish/*
@@ -153,6 +153,8 @@ resource "azapi_resource" "email_communication_service_domain" {
       userEngagementTracking = "Disabled"
     }
   })
+
+  response_export_values = ["properties.fromSenderDomain"]
 }
 
 resource "azapi_resource" "email_communication_service_domain_sender_username" {
@@ -167,8 +169,6 @@ resource "azapi_resource" "email_communication_service_domain_sender_username" {
       username    = local.project_name
     }
   })
-  
-  response_export_values = ["*"]
 }
 
 data "azurerm_subscription" "current" {
@@ -222,16 +222,6 @@ resource "azurerm_linux_function_app" "function" {
   service_plan_id            = azurerm_service_plan.sp.id
 
   webdeploy_publish_basic_authentication_enabled = false
-  zip_deploy_file                                = local.notificationHandler_zip_deploy_file
-
-  app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE                      = 1
-    SCM_DO_BUILD_DURING_DEPLOYMENT                = true
-    ENABLE_ORYX_BUILD                             = true
-    ServiceBusConnection__fullyQualifiedNamespace = azurerm_servicebus_namespace.namespace.default_primary_connection_string
-    ResourceEndpoint                              = "https://${local.azurerm_communication_service_name}.${azurerm_email_communication_service.email_communication_service.data_location}.communication.azure.com"
-    Sender                                        = azapi_resource.email_communication_service_domain_sender_username.output
-  }
 
   site_config {
     application_stack {
@@ -241,10 +231,3 @@ resource "azurerm_linux_function_app" "function" {
   }
 }
 
-output "sender_username" {
-  value = azapi_resource.email_communication_service_domain_sender_username.output
-}
-
-output "resource_endpoint" {
-  value = "https://${local.azurerm_communication_service_name}.${azurerm_email_communication_service.email_communication_service.data_location}.communication.azure.com"
-}
