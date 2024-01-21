@@ -252,3 +252,26 @@ resource "azurerm_role_assignment" "allow_function_to_read_service_bus" {
   role_definition_name = "Azure Service Bus Data Receiver"
   principal_id         = azurerm_linux_function_app.function.identity[0].principal_id
 }
+
+data "azurerm_subscription" "primary" {
+}
+
+resource "azurerm_role_definition" "allow_function_to_send_emails" {
+  name               = "allow-function-to-send-emails"
+  scope              = data.azurerm_subscription.primary.id
+
+  permissions {
+    actions     = ["Microsoft.Communication/CommunicationServices/Write", "Microsoft.Communication/CommunicationServices/Read"]
+    not_actions = []
+  }
+
+  assignable_scopes = [
+    data.azurerm_subscription.primary.id,
+  ]
+}
+
+resource "azurerm_role_assignment" "assign_custom_role_to_function" {
+  scope              = data.azurerm_subscription.primary.id
+  role_definition_id = azurerm_role_definition.allow_function_to_send_emails.role_definition_resource_id
+  principal_id       = azurerm_linux_function_app.function.identity[0].principal_id
+}
