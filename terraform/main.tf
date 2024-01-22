@@ -28,13 +28,8 @@ locals {
   #zip -j ticketing.zip ./Ticketing/bin/Release/net8.0/publish/*
   ticketing_zip_path = "../ticketing.zip"
 
-  #dotnet publish ./NotificationHandler/NotificationHandler.csproj -c Release
-  #zip -j NotificationHandler.zip ./NotificationHandler/bin/Release/net8.0/publish/*
-  notificationHandler_zip_path = "../NotificationHandler.zip"
-
   #throw an error if file doesn't exist
-  ticketing_zip_deploy_file           = fileexists(local.ticketing_zip_path) ? local.ticketing_zip_path : [][0]
-  notificationHandler_zip_deploy_file = fileexists(local.notificationHandler_zip_path) ? local.notificationHandler_zip_path : [][0]
+  ticketing_zip_deploy_file = fileexists(local.ticketing_zip_path) ? local.ticketing_zip_path : [][0]
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -226,8 +221,6 @@ resource "azurerm_linux_function_app" "function" {
     type = "SystemAssigned"
   }
 
-  zip_deploy_file = local.notificationHandler_zip_deploy_file
-
   app_settings = {
     WEBSITE_RUN_FROM_PACKAGE                      = 1
     SCM_DO_BUILD_DURING_DEPLOYMENT                = true
@@ -278,7 +271,7 @@ resource "azurerm_role_assignment" "assign_custom_role_to_function" {
 }
 
 locals {
-  publish_code_command = <<EOT
+  publish_code_command = <<-EOT
       func azure functionapp publish ${azurerm_linux_function_app.function.name}
       az functionapp config set --name ${azurerm_linux_function_app.function.name} --resource-group ${azurerm_resource_group.rg.name} --linux-fx-version "DOTNET-ISOLATED|8.0"
 EOT
@@ -290,11 +283,9 @@ resource "null_resource" "function_app_publish" {
     command     = local.publish_code_command
   }
 
-  depends_on = [local.publish_code_command]
+  depends_on = [local.publish_code_command, azurerm_role_assignment.assign_custom_role_to_function]
 
   triggers = {
-    input_json           = filemd5(local.notificationHandler_zip_deploy_file)
     publish_code_command = local.publish_code_command
   }
 }
-
