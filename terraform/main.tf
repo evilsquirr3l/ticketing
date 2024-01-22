@@ -225,7 +225,7 @@ resource "azurerm_linux_function_app" "function" {
   identity {
     type = "SystemAssigned"
   }
-  
+
   zip_deploy_file = local.notificationHandler_zip_deploy_file
 
   app_settings = {
@@ -253,15 +253,16 @@ resource "azurerm_role_assignment" "allow_function_to_read_service_bus" {
   principal_id         = azurerm_linux_function_app.function.identity[0].principal_id
 }
 
-data "azurerm_subscription" "primary" {
-}
+data "azurerm_subscription" "primary" {}
 
 resource "azurerm_role_definition" "allow_function_to_send_emails" {
-  name               = "allow-function-to-send-emails"
-  scope              = data.azurerm_subscription.primary.id
+  name  = "allow-function-to-send-emails"
+  scope = data.azurerm_subscription.primary.id
 
   permissions {
-    actions     = ["Microsoft.Communication/CommunicationServices/Write", "Microsoft.Communication/CommunicationServices/Read"]
+    actions = [
+      "Microsoft.Communication/CommunicationServices/Write", "Microsoft.Communication/CommunicationServices/Read"
+    ]
     not_actions = []
   }
 
@@ -275,3 +276,25 @@ resource "azurerm_role_assignment" "assign_custom_role_to_function" {
   role_definition_id = azurerm_role_definition.allow_function_to_send_emails.role_definition_resource_id
   principal_id       = azurerm_linux_function_app.function.identity[0].principal_id
 }
+
+locals {
+  publish_code_command = <<EOT
+      func azure functionapp publish ${azurerm_linux_function_app.function.name}
+      az functionapp config set --name ${azurerm_linux_function_app.function.name} --resource-group ${azurerm_resource_group.rg.name} --linux-fx-version "DOTNET-ISOLATED|8.0"
+EOT
+}
+
+resource "null_resource" "function_app_publish" {
+  provisioner "local-exec" {
+    working_dir = "../NotificationHandler"
+    command     = local.publish_code_command
+  }
+
+  depends_on = [local.publish_code_command]
+
+  triggers = {
+    input_json           = filemd5(local.notificationHandler_zip_deploy_file)
+    publish_code_command = local.publish_code_command
+  }
+}
+
