@@ -22,14 +22,6 @@ provider "azurerm" {
 locals {
   project_name                       = "ticketing"
   azurerm_communication_service_name = "${local.project_name}-az-communication-service"
-
-  #run the commands below to get it (for macOS / linux):
-  #dotnet publish ./Ticketing/Ticketing.csproj -c Release
-  #zip -j ticketing.zip ./Ticketing/bin/Release/net8.0/publish/*
-  ticketing_zip_path = "../ticketing.zip"
-
-  #throw an error if file doesn't exist
-  ticketing_zip_deploy_file = fileexists(local.ticketing_zip_path) ? local.ticketing_zip_path : [][0]
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -53,13 +45,17 @@ resource "azurerm_linux_web_app" "app" {
   service_plan_id     = azurerm_service_plan.sp.id
   https_only          = true
 
-  webdeploy_publish_basic_authentication_enabled = false
-  zip_deploy_file                                = local.ticketing_zip_deploy_file
-
+  identity {
+    type = "SystemAssigned"
+  }
+  
   app_settings = {
     WEBSITE_RUN_FROM_PACKAGE       = 1
     SCM_DO_BUILD_DURING_DEPLOYMENT = true
     CacheExpirationInMinutes       = 5
+    ServiceBusSettings__QueueName  = azurerm_servicebus_queue.queue.name
+    ServiceBusSettings__MaxRetries = 3
+    ServiceBusSettings__TryTimeout = 5
   }
 
   site_config {
@@ -78,6 +74,39 @@ resource "azurerm_linux_web_app" "app" {
     name  = "RedisConnection"
     type  = "RedisCache"
     value = azurerm_redis_cache.redis.primary_connection_string
+  }
+
+  connection_string {
+    name  = "ServiceBusConnection"
+    type  = "ServiceBus"
+    value = "${azurerm_servicebus_namespace.namespace.name}.servicebus.windows.net"
+  }
+}
+
+resource "azurerm_role_assignment" "allow_web_app_to_read_service_bus" {
+  scope                = azurerm_servicebus_namespace.namespace.id
+  role_definition_name = "Azure Service Bus Data Owner"
+  principal_id         = azurerm_linux_web_app.app.identity[0].principal_id
+}
+
+locals {
+  publish_web_app = <<-EOT
+    dotnet publish ./Ticketing/Ticketing.csproj -c Release
+    zip -j ticketing.zip ./Ticketing/bin/Release/net8.0/publish/*
+    az webapp deployment source config-zip --resource-group ${azurerm_resource_group.rg.name} --name ${azurerm_linux_web_app.app.name} --src ./ticketing.zip
+EOT
+}
+
+resource "null_resource" "azurerm_linux_web_app_publish" {
+  provisioner "local-exec" {
+    working_dir = "../"
+    command     = local.publish_web_app
+  }
+
+  depends_on = [local.publish_web_app, azurerm_role_assignment.allow_web_app_to_read_service_bus]
+
+  triggers = {
+    publish_web_app = local.publish_web_app
   }
 }
 
@@ -271,7 +300,7 @@ resource "azurerm_role_assignment" "assign_custom_role_to_function" {
 }
 
 locals {
-  publish_code_command = <<-EOT
+  publish_function_app = <<-EOT
       func azure functionapp publish ${azurerm_linux_function_app.function.name}
       az functionapp config set --name ${azurerm_linux_function_app.function.name} --resource-group ${azurerm_resource_group.rg.name} --linux-fx-version "DOTNET-ISOLATED|8.0"
 EOT
@@ -280,12 +309,12 @@ EOT
 resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
     working_dir = "../NotificationHandler"
-    command     = local.publish_code_command
+    command     = local.publish_function_app
   }
 
-  depends_on = [local.publish_code_command, azurerm_role_assignment.assign_custom_role_to_function]
+  depends_on = [local.publish_function_app, azurerm_role_assignment.assign_custom_role_to_function]
 
   triggers = {
-    publish_code_command = local.publish_code_command
+    publish_function_app = local.publish_function_app
   }
 }

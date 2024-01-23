@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 var postgresConnectionString = builder.Configuration.GetValue<string>("POSTGRESQLCONNSTR_DatabaseConnection");
 var redisConnectionString = builder.Configuration.GetValue<string>("RedisCacheCONNSTR_RedisConnection");
 var queueName = builder.Configuration.GetValue<string>("ServiceBusSettings:QueueName");
-var serviceBusNamespace = builder.Configuration.GetValue<string>("ServiceBusSettings:Namespace");
+var serviceBusNamespace = builder.Configuration.GetValue<string>("ServiceBusCONNSTR_ServiceBusConnection");
 var cacheExpiration = builder.Configuration.GetValue<TimeSpan>("CacheExpirationInMinutes");
 
 builder.Services.Configure<ServiceBusSettings>(options =>
