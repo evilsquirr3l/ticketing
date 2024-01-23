@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
@@ -11,22 +13,25 @@ using Vernou.Swashbuckle.HttpResultsAdapter;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var postgresConnectionString = builder.Configuration.GetValue<string>("POSTGRESQLCONNSTR_DatabaseConnection");
+var redisConnectionString = builder.Configuration.GetValue<string>("RedisCacheCONNSTR_RedisConnection");
+var queueName = builder.Configuration.GetValue<string>("ServiceBusSettings:QueueName");
+var serviceBusNamespace = builder.Configuration.GetValue<string>("ServiceBusSettings:Namespace");
+var cacheExpiration = builder.Configuration.GetValue<TimeSpan>("CacheExpirationInMinutes");
+
 builder.Services.Configure<ServiceBusSettings>(options =>
     builder.Configuration.GetSection("ServiceBusSettings").Bind(options));
-var cacheExpiration = builder.Configuration.GetValue<TimeSpan>("CacheExpirationInMinutes");
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddResponseCaching();
 builder.Services.AddOutputCache(opt => opt.DefaultExpirationTimeSpan = cacheExpiration)
-    .AddStackExchangeRedisOutputCache(options =>
-    {
-        options.Configuration = builder.Configuration.GetValue<string>("RedisCacheCONNSTR_RedisConnection");
-    });
+    .AddStackExchangeRedisOutputCache(options => { options.Configuration = redisConnectionString; });
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -36,15 +41,17 @@ builder.Services.AddSwaggerGen(c =>
         {
             return new[] { api.GroupName };
         }
+
         if (api.ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
         {
             return new[] { controllerActionDescriptor.ControllerName };
         }
+
         throw new InvalidOperationException("Unable to determine tag for endpoint.");
     });
-    
+
     c.DocInclusionPredicate((name, api) => true);
-    
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -59,19 +66,18 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-    
+
     c.OperationFilter<HttpResultsOperationFilter>();
 });
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
-builder.Services.AddDbContextPool<TicketingDbContext>(x =>
-    x.UseNpgsql(builder.Configuration.GetValue<string>("POSTGRESQLCONNSTR_DatabaseConnection")));
+builder.Services.AddDbContextPool<TicketingDbContext>(x => { x.UseNpgsql(postgresConnectionString); });
 
 builder.Services.AddAzureClients(clientBuilder =>
 {
     clientBuilder
-        .AddServiceBusClientWithNamespace(builder.Configuration.GetValue<string>("ServiceBusSettings:Namespace"))
+        .AddServiceBusClientWithNamespace(serviceBusNamespace)
         .WithCredential(new DefaultAzureCredential())
         .ConfigureOptions(clientOptions =>
         {
@@ -82,10 +88,14 @@ builder.Services.AddAzureClients(clientBuilder =>
                 TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("ServiceBusSettings:TryTimeout"));
         });
 
-    var queueName = builder.Configuration.GetValue<string>("ServiceBusSettings:QueueName");
     clientBuilder.AddClient<ServiceBusSender, ServiceBusClientOptions>((_, _, provider) =>
         provider.GetService<ServiceBusClient>()?.CreateSender(queueName)!).WithName(queueName);
 });
+
+builder.Services.AddHealthChecks()
+    .AddNpgSql(postgresConnectionString!)
+    .AddRedis(redisConnectionString!)
+    .AddAzureServiceBusQueue(serviceBusNamespace!, queueName!, new DefaultAzureCredential());
 
 var app = builder.Build();
 
@@ -100,6 +110,11 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseHealthChecks("/_health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.UseOutputCache();
 
