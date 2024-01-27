@@ -76,6 +76,8 @@ public class CreateCartItem : ControllerBase
                 throw new InvalidOperationException("This offer is already in the cart.", e.InnerException);
             }
 
+            await ReserveSeatAsync(request, cancellationToken);
+
             return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId);
         }
 
@@ -97,6 +99,15 @@ public class CreateCartItem : ControllerBase
             {
                 throw new InvalidOperationException("Seat is already reserved.");
             }
+        }
+
+        private async Task ReserveSeatAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
+        {
+            var offer = await _dbContext.Offers
+                .Include(x => x.Seat)
+                .FirstOrDefaultAsync(x => x.Id == request.OfferId, cancellationToken: cancellationToken);
+
+            offer!.Seat.IsReserved = true;
         }
     }
 }
