@@ -13,8 +13,7 @@ public static class MigrationManager
         {
             await context.Database.EnsureCreatedAsync();
 
-            if (context.Database.ProviderName is not "Microsoft.EntityFrameworkCore.InMemory" &&
-                !await context.Venues.AnyAsync())
+            if (!await context.Venues.AnyAsync())
             {
                 var venue = new Venue { Location = "New York" };
                 var event1 = new Event
@@ -34,6 +33,12 @@ public static class MigrationManager
                 var cartItem = new CartItem { Offer = offer, Cart = cart };
                 await context.AddRangeAsync(venue, event1, manifest, section, row, seat, price, offer, payment,
                     customer, cart, cartItem);
+
+                for (var i = 0; i < 50; i++)
+                {
+                    await context.AddAsync(new Seat { SeatNumber = $"Seat {i}", Row = row });
+                }
+
                 await context.SaveChangesAsync();
             }
         }
