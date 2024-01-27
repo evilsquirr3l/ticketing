@@ -58,7 +58,7 @@ public class GetSectionsInVenue : ControllerBase
             var sectionsViewModel = sections.Select(section =>
                 new SectionViewModel(section.Id, section.Name,
                     section.Rows.Select(row => new RowViewModel(row.Id, row.Number,
-                        row.Seats.Select(seat => new SeatViewModel(seat.Id, seat.SeatNumber))))));
+                        row.Seats.Select(seat => new SeatViewModel(seat.Id, seat.SeatNumber, seat.IsReserved, seat.RowId))))));
 
             return sectionsViewModel;
         }

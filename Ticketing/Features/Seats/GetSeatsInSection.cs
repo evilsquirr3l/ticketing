@@ -60,7 +60,7 @@ public class GetSeatsInSection : ControllerBase
                 .ToListAsync(cancellationToken: cancellationToken);
 
             var seatsViewModel = seats.Select(seat =>
-                new SeatViewModel(seat.Id, seat.SeatNumber));
+                new SeatViewModel(seat.Id, seat.SeatNumber, seat.IsReserved, seat.RowId));
 
             return seatsViewModel;
         }
