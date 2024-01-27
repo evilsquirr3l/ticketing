@@ -64,7 +64,7 @@ public class CreateCartItem : ControllerBase
                 OfferId = request.OfferId
             };
 
-            _dbContext.CartItems.Add(cartItem);
+            await _dbContext.CartItems.AddAsync(cartItem, cancellationToken);
 
             try
             {
@@ -86,7 +86,8 @@ public class CreateCartItem : ControllerBase
                    await _dbContext.Events.FindAsync(request.EventId) is null;
         }
 
-        private async Task ThrowIfSeatIsReservedAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
+        private async Task ThrowIfSeatIsReservedAsync(CreateCartItemCommand request,
+            CancellationToken cancellationToken)
         {
             var offer = await _dbContext.Offers
                 .Include(x => x.Seat)
