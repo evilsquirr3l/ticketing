@@ -67,10 +67,18 @@ public class CreateCartItem : ControllerBase
                 CreatedAt = _timeProvider.GetUtcNow()
             };
 
-            await _dbContext.CartItems.AddAsync(cartItem, cancellationToken);
+            await TrySaveCartItemsAndReserveSeatsAsync(request, cartItem, cancellationToken);
 
+            return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt);
+        }
+
+        private async Task TrySaveCartItemsAndReserveSeatsAsync(CreateCartItemCommand request,
+            CartItem cartItem, CancellationToken cancellationToken)
+        {
             try
             {
+                await _dbContext.CartItems.AddAsync(cartItem, cancellationToken);
+                await ReserveSeatAsync(request, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException e)
@@ -78,10 +86,6 @@ public class CreateCartItem : ControllerBase
                 Console.WriteLine(e.Message);
                 throw new InvalidOperationException("This offer is already in the cart.", e.InnerException);
             }
-
-            await ReserveSeatAsync(request, cancellationToken);
-
-            return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt);
         }
 
         private async Task<bool> CartItemsAreNotFoundAsync(CreateCartItemCommand request)
