@@ -48,14 +48,15 @@ resource "azurerm_linux_web_app" "app" {
   identity {
     type = "SystemAssigned"
   }
-  
+
   app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE       = 1
-    SCM_DO_BUILD_DURING_DEPLOYMENT = true
-    CacheExpirationInMinutes       = 5
-    ServiceBusSettings__QueueName  = azurerm_servicebus_queue.queue.name
-    ServiceBusSettings__MaxRetries = 3
-    ServiceBusSettings__TryTimeout = 5
+    WEBSITE_RUN_FROM_PACKAGE                  = 1
+    SCM_DO_BUILD_DURING_DEPLOYMENT            = true
+    CacheExpirationInMinutes                  = 5
+    ServiceBusSettings__QueueName             = azurerm_servicebus_queue.queue.name
+    ServiceBusSettings__MaxRetries            = 3
+    ServiceBusSettings__TryTimeout            = 5,
+    AppSettings__CartItemsExpirationInMinutes = 15
   }
 
   site_config {

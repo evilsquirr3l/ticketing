@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.OpenApi.Models;
 using Ticketing.Data;
-using Ticketing.Models;
+using Ticketing.Settings;
 using Vernou.Swashbuckle.HttpResultsAdapter;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +21,9 @@ var cacheExpiration = builder.Configuration.GetValue<int>("CacheExpirationInMinu
 
 builder.Services.Configure<ServiceBusSettings>(options =>
     builder.Configuration.GetSection("ServiceBusSettings").Bind(options));
+
+builder.Services.Configure<CartItemsExpiration>(options =>
+    builder.Configuration.GetSection("AppSettings").Bind(options));
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {

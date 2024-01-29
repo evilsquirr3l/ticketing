@@ -25,6 +25,8 @@ public class CreateCartItemTests
     {
         _timeProvider = new Mock<TimeProvider>();
         _timeProvider.Setup(x => x.GetUtcNow()).Returns(_utcNow);
+        _timeProvider.Setup(x => x.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+
         await _postgreSqlContainer.StartAsync();
         _dbContextOptions = new DbContextOptionsBuilder<TicketingDbContext>()
             .UseNpgsql(_postgreSqlContainer.GetConnectionString())
@@ -95,7 +97,7 @@ public class CreateCartItemTests
         var eventId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
@@ -113,7 +115,7 @@ public class CreateCartItemTests
         var eventId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: true));
+        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: true));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
@@ -132,8 +134,8 @@ public class CreateCartItemTests
         var secondOfferId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
-        await dbContext.Offers.AddAsync(GetOfferWithItems(secondOfferId, eventId));
+        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
@@ -154,8 +156,8 @@ public class CreateCartItemTests
         var secondOfferId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
-        await dbContext.Offers.AddAsync(GetOfferWithItems(secondOfferId, eventId));
+        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
@@ -175,8 +177,8 @@ public class CreateCartItemTests
         var secondOfferId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
-        await dbContext.Offers.AddAsync(GetOfferWithItems(secondOfferId, eventId));
+        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
@@ -186,104 +188,5 @@ public class CreateCartItemTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<CartItemViewModel>());
         Assert.That(result?.CreatedAt, Is.EqualTo(_utcNow));
-    }
-
-    private static Cart GetCartWithItems(Guid cartId, Guid offerId, Guid eventId, bool isSeatReserved)
-    {
-        var @event = new Event
-        {
-            Id = eventId,
-            Name = "Test Event2",
-            Date = DateTime.UtcNow,
-            Description = "Test Description2"
-        };
-
-        var row = new Row
-        {
-            Number = "Test Row Number2",
-            Section = new Section
-            {
-                Name = "Test Section Name2",
-                Manifest = new Manifest
-                {
-                    Map = "test map",
-                    Venue = new Venue
-                    {
-                        Event = @event,
-                        Location = "test location"
-                    }
-                }
-            }
-        };
-
-        var cart = new Cart
-        {
-            Id = cartId,
-            Customer = new Customer
-            {
-                Email = "test@gmail.com",
-                Name = "Test Customer"
-            },
-            CartItems = new List<CartItem>
-            {
-                new()
-                {
-                    Offer = new Offer
-                    {
-                        Id = offerId,
-                        Event = @event,
-                        Price = new Price
-                        {
-                            Amount = 100m
-                        },
-                        OfferType = "Test Offer Type1",
-                        Seat = new Seat
-                        {
-                            SeatNumber = "Test Seat Number1",
-                            Row = row,
-                            IsReserved = isSeatReserved
-                        }
-                    }
-                }
-            }
-        };
-
-        return cart;
-    }
-
-    private static Offer GetOfferWithItems(Guid offerId, Guid eventId)
-    {
-        return new Offer
-        {
-            Id = offerId,
-            EventId = eventId,
-            Price = new Price
-            {
-                Amount = 100m
-            },
-            OfferType = "Test Offer Type2",
-            Seat = new Seat
-            {
-                SeatNumber = "Test Seat Number2",
-                Row = new Row
-                {
-                    Number = "Test Row Number2",
-                    Section = new Section
-                    {
-                        Name = "Test Section Name2",
-                        Manifest = new Manifest
-                        {
-                            Map = "test map",
-                            Venue = new Venue
-                            {
-                                EventId = eventId,
-                                Location = "test location"
-                            }
-                        }
-                    }
-                },
-                IsReserved = false
-            }
-        };
     }
 }

@@ -12,6 +12,7 @@ using Ticketing.Constants;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
 using Ticketing.Models;
+using Ticketing.Settings;
 
 namespace Ticketing.Features.CartItems;
 
