@@ -5,8 +5,8 @@ using NUnit.Framework;
 using Testcontainers.PostgreSql;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
-using Ticketing.Features.CartItems;
 using Ticketing.Settings;
+using static Ticketing.Features.CartItems.DeleteExpiredCartItems;
 
 namespace UnitTests;
 
@@ -15,9 +15,9 @@ public class DeleteExpiredCartItemsTests
     private readonly PostgreSqlContainer _postgreSqlContainer = new PostgreSqlBuilder().Build();
     private DbContextOptions<TicketingDbContext> _dbContextOptions = null!;
     private IOptions<CartItemsExpiration> _options = null!;
-    private Mock<TimeProvider> _timeProvider;
-    private DateTimeOffset _utcNow = new(2045, 1, 1, 1, 1, 1, TimeSpan.Zero);
-    private readonly int _cartItemsExpiration = 15;
+    private Mock<TimeProvider> _timeProvider = null!;
+    private readonly DateTimeOffset _utcNow = new(2045, 1, 1, 1, 1, 1, TimeSpan.Zero);
+    private const int CartItemsExpiration = 15;
 
     [OneTimeSetUp]
     public async Task Setup()
@@ -31,7 +31,7 @@ public class DeleteExpiredCartItemsTests
             .UseNpgsql(_postgreSqlContainer.GetConnectionString())
             .Options;
 
-        _options = Options.Create(new CartItemsExpiration { CartItemsExpirationInMinutes = _cartItemsExpiration });
+        _options = Options.Create(new CartItemsExpiration { CartItemsExpirationInMinutes = CartItemsExpiration });
     }
 
     [OneTimeTearDown]
@@ -45,24 +45,22 @@ public class DeleteExpiredCartItemsTests
     {
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        var cartId = Guid.NewGuid();
-        var offerId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
-        var cartWithItems = FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false);
+        var cartWithItems = FakeItemsFactory.GetCartWithItems(Guid.NewGuid(), Guid.NewGuid(), eventId, isSeatReserved: false);
         await dbContext.Carts.AddAsync(cartWithItems);
         var offerWithItems = FakeItemsFactory.GetOfferWithItems(Guid.NewGuid(), eventId);
         await dbContext.Offers.AddAsync(offerWithItems);
-        await dbContext.CartItems.AddAsync(new CartItem()
+        await dbContext.CartItems.AddAsync(new CartItem
         {
             Cart = cartWithItems,
             Offer = offerWithItems,
-            CreatedAt = _utcNow.AddMinutes(-_cartItemsExpiration - 1)
+            //expired 1 min ago
+            CreatedAt = _utcNow.AddMinutes(-CartItemsExpiration - 1)
         });
         await dbContext.SaveChangesAsync();
-        var handler =
-            new DeleteExpiredCartItems.DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
+        var handler = new DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
 
-        await handler.Handle(new DeleteExpiredCartItems.DeleteExpiredCartItemsCommand(), CancellationToken.None);
+        await handler.Handle(new DeleteExpiredCartItemsCommand(), CancellationToken.None);
 
         var cartItems = await dbContext.CartItems.ToListAsync();
         Assert.That(cartItems, Is.Empty);
@@ -73,25 +71,23 @@ public class DeleteExpiredCartItemsTests
     {
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        var cartId = Guid.NewGuid();
-        var offerId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
-        var cartWithItems = FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false);
+        var cartWithItems = FakeItemsFactory.GetCartWithItems(Guid.NewGuid(), Guid.NewGuid(), eventId, isSeatReserved: false);
         await dbContext.Carts.AddAsync(cartWithItems);
         var offerWithItems = FakeItemsFactory.GetOfferWithItems(Guid.NewGuid(), eventId);
         await dbContext.Offers.AddAsync(offerWithItems);
-        await dbContext.CartItems.AddAsync(new CartItem()
+        await dbContext.CartItems.AddAsync(new CartItem
         {
             Cart = cartWithItems,
             Offer = offerWithItems,
-            CreatedAt = _utcNow.AddMinutes(-_cartItemsExpiration + 1)
+            //1 min till expiration
+            CreatedAt = _utcNow.AddMinutes(-CartItemsExpiration + 1)
         });
         await dbContext.SaveChangesAsync();
-        var handler =
-            new DeleteExpiredCartItems.DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
-        
-        await handler.Handle(new DeleteExpiredCartItems.DeleteExpiredCartItemsCommand(), CancellationToken.None);
-        
+        var handler = new DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
+
+        await handler.Handle(new DeleteExpiredCartItemsCommand(), CancellationToken.None);
+
         var cartItems = await dbContext.CartItems.ToListAsync();
         Assert.That(cartItems, Is.Not.Empty);
     }
