@@ -43,10 +43,12 @@ public class CreateCartItem : ControllerBase
     public class CreateCartItemCommandHandler : IRequestHandler<CreateCartItemCommand, CartItemViewModel?>
     {
         private readonly TicketingDbContext _dbContext;
+        private readonly TimeProvider _timeProvider;
 
-        public CreateCartItemCommandHandler(TicketingDbContext dbContext)
+        public CreateCartItemCommandHandler(TicketingDbContext dbContext, TimeProvider timeProvider)
         {
             _dbContext = dbContext;
+            _timeProvider = timeProvider;
         }
 
         public async Task<CartItemViewModel?> Handle(CreateCartItemCommand request, CancellationToken cancellationToken)
@@ -61,7 +63,8 @@ public class CreateCartItem : ControllerBase
             var cartItem = new CartItem
             {
                 CartId = request.CartId,
-                OfferId = request.OfferId
+                OfferId = request.OfferId,
+                CreatedAt = _timeProvider.GetUtcNow()
             };
 
             await _dbContext.CartItems.AddAsync(cartItem, cancellationToken);
@@ -78,7 +81,7 @@ public class CreateCartItem : ControllerBase
 
             await ReserveSeatAsync(request, cancellationToken);
 
-            return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId);
+            return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt);
         }
 
         private async Task<bool> CartItemsAreNotFoundAsync(CreateCartItemCommand request)

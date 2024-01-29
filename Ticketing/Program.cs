@@ -70,6 +70,7 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<HttpResultsOperationFilter>();
 });
 
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 builder.Services.AddDbContextPool<TicketingDbContext>(x => { x.UseNpgsql(postgresConnectionString); });

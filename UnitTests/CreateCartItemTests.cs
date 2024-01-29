@@ -17,10 +17,14 @@ public class CreateCartItemTests
 {
     private readonly PostgreSqlContainer _postgreSqlContainer = new PostgreSqlBuilder().Build();
     private DbContextOptions<TicketingDbContext> _dbContextOptions = null!;
+    private Mock<TimeProvider> _timeProvider;
+    private DateTimeOffset _utcNow = new(2045, 1, 1, 1, 1, 1, TimeSpan.Zero);
 
     [OneTimeSetUp]
     public async Task Setup()
     {
+        _timeProvider = new Mock<TimeProvider>();
+        _timeProvider.Setup(x => x.GetUtcNow()).Returns(_utcNow);
         await _postgreSqlContainer.StartAsync();
         _dbContextOptions = new DbContextOptionsBuilder<TicketingDbContext>()
             .UseNpgsql(_postgreSqlContainer.GetConnectionString())
@@ -40,7 +44,7 @@ public class CreateCartItemTests
         var cartId = Guid.NewGuid();
         var offerId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
-        var cartItemViewModel = new CartItemViewModel(Guid.NewGuid(), offerId, eventId);
+        var cartItemViewModel = new CartItemViewModel(Guid.NewGuid(), offerId, eventId, _utcNow);
         mediator.Setup(x =>
                 x.Send(
                     It.Is<CreateCartItem.CreateCartItemCommand>(x =>
@@ -93,7 +97,7 @@ public class CreateCartItemTests
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.SaveChangesAsync();
-        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext);
+        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId),
@@ -111,7 +115,7 @@ public class CreateCartItemTests
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: true));
         await dbContext.SaveChangesAsync();
-        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext);
+        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId),
@@ -131,7 +135,7 @@ public class CreateCartItemTests
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.Offers.AddAsync(GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
-        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext);
+        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
         var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, secondOfferId, eventId),
             CancellationToken.None);
@@ -153,13 +157,35 @@ public class CreateCartItemTests
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.Offers.AddAsync(GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
-        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext);
+        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
         await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, secondOfferId, eventId),
             CancellationToken.None);
 
         var offer = await dbContext.Offers.Include(x => x.Seat).FirstOrDefaultAsync(x => x.Id == secondOfferId);
         Assert.That(offer?.Seat?.IsReserved, Is.True);
+    }
+
+    [Test]
+    public async Task Handle_DatabaseHasValidOfferNotInTheCart_ReturnsCartItemWithCreatedAt()
+    {
+        var cartId = Guid.NewGuid();
+        var offerId = Guid.NewGuid();
+        var eventId = Guid.NewGuid();
+        var secondOfferId = Guid.NewGuid();
+        await using var dbContext = new TicketingDbContext(_dbContextOptions);
+        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Carts.AddAsync(GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Offers.AddAsync(GetOfferWithItems(secondOfferId, eventId));
+        await dbContext.SaveChangesAsync();
+        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
+
+        var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, secondOfferId, eventId),
+            CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.InstanceOf<CartItemViewModel>());
+        Assert.That(result?.CreatedAt, Is.EqualTo(_utcNow));
     }
 
     private static Cart GetCartWithItems(Guid cartId, Guid offerId, Guid eventId, bool isSeatReserved)
