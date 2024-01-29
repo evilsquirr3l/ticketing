@@ -19,7 +19,7 @@ public class DeleteExpiredCartItems : ControllerBase
     }
 
     [HttpDelete]
-    [Route("orders/carts")]
+    [Route("orders/carts/expired")]
     public async Task<IResult> DeleteExpired()
     {
         await _mediator.Send(new DeleteExpiredCartItemsCommand());
