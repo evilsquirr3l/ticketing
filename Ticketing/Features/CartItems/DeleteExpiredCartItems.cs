@@ -45,7 +45,7 @@ public class DeleteExpiredCartItems : ControllerBase
 
         public async Task Handle(DeleteExpiredCartItemsCommand request, CancellationToken cancellationToken)
         {
-            var expiredAt = _timeProvider.GetLocalNow().AddMinutes(-_cartItemsExpiration);
+            var expiredAt = _timeProvider.GetUtcNow().AddMinutes(-_cartItemsExpiration);
             var expiredCarts = await _dbContext.CartItems
                 .Where(x => x.CreatedAt <= expiredAt)
                 .ToListAsync(cancellationToken: cancellationToken);
