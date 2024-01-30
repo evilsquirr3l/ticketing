@@ -22,6 +22,7 @@ provider "azurerm" {
 locals {
   project_name                       = "ticketing"
   azurerm_communication_service_name = "${local.project_name}-az-communication-service"
+  cart_items_expiration_in_minutes   = 15
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -48,14 +49,15 @@ resource "azurerm_linux_web_app" "app" {
   identity {
     type = "SystemAssigned"
   }
-  
+
   app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE       = 1
-    SCM_DO_BUILD_DURING_DEPLOYMENT = true
-    CacheExpirationInMinutes       = 5
-    ServiceBusSettings__QueueName  = azurerm_servicebus_queue.queue.name
-    ServiceBusSettings__MaxRetries = 3
-    ServiceBusSettings__TryTimeout = 5
+    WEBSITE_RUN_FROM_PACKAGE                  = 1
+    SCM_DO_BUILD_DURING_DEPLOYMENT            = true
+    CacheExpirationInMinutes                  = 5
+    ServiceBusSettings__QueueName             = azurerm_servicebus_queue.queue.name
+    ServiceBusSettings__MaxRetries            = 3
+    ServiceBusSettings__TryTimeout            = 5
+    AppSettings__CartItemsExpirationInMinutes = local.cart_items_expiration_in_minutes
   }
 
   site_config {
@@ -317,4 +319,24 @@ resource "null_resource" "function_app_publish" {
   triggers = {
     publish_function_app = local.publish_function_app
   }
+}
+
+resource "azurerm_logic_app_workflow" "remove_expired_cart_items" {
+  name                = "${local.project_name}_remove_expired_cart_items"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_logic_app_trigger_recurrence" "trigger" {
+  name         = "recurrence"
+  logic_app_id = azurerm_logic_app_workflow.remove_expired_cart_items.id
+  frequency    = "Minute"
+  interval     = local.cart_items_expiration_in_minutes
+}
+
+resource "azurerm_logic_app_action_http" "action" {
+  name         = "action"
+  logic_app_id = azurerm_logic_app_workflow.remove_expired_cart_items.id
+  method       = "DELETE"
+  uri          = "https://${azurerm_linux_web_app.app.default_hostname}/orders/carts/expired"
 }

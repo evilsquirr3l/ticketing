@@ -1,5 +1,11 @@
 # Persistence Level (SQL, NoSQL) + DAL
 
+The purpose of the module is to provide developers with the knowledge and skills to design and implement a data
+persistence layer for an application. During the training, developers will learn about the different types of database
+management systems (DBMSs), including SQL (relational databases) and NoSQL (non-relational databases), and the
+advantages and disadvantages of each. They will also learn how to design a database schema that meets the needs of the
+application and how to choose the appropriate DBMS for the job.
+
 ### What should be done
 
 - Implement a data access layer for the designed database. All the CRUD operations must be implemented.
