@@ -1,5 +1,8 @@
 # Ticketing Domain – Introduction
 
+The purpose of the module is to provide you with the basics of terminology, actors, components and the typical use-cases
+used in a ticketing domain.
+
 Domain Vocabulary:
 
 - Event – An event is an occurrence in time. In ticketing system, the event acts as a container for both venue (which

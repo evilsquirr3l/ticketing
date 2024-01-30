@@ -19,7 +19,7 @@ public class ServiceBusQueueTrigger
 
     [Function(nameof(ServiceBusReceivedMessageWithStringProperties))]
     public async Task ServiceBusReceivedMessageWithStringProperties(
-        [ServiceBusTrigger("mentoring-queue", Connection = "ServiceBusConnection")]
+        [ServiceBusTrigger("ticketing_servicebus_queue", Connection = "ServiceBusConnection")]
         ServiceBusReceivedMessage serviceBusMessage)
     {
         var message = serviceBusMessage.Body.ToObjectFromJson<Message>();

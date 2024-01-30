@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
+using Ticketing.Constants;
 using Ticketing.Data;
 using Ticketing.Models;
 
@@ -9,6 +11,7 @@ namespace Ticketing.Features.Seats;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "Seats")]
+[OutputCache(Tags = [Tags.Seats])]
 public class GetSeatsInSection : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -57,7 +60,7 @@ public class GetSeatsInSection : ControllerBase
                 .ToListAsync(cancellationToken: cancellationToken);
 
             var seatsViewModel = seats.Select(seat =>
-                new SeatViewModel(seat.Id, seat.SeatNumber));
+                new SeatViewModel(seat.Id, seat.SeatNumber, seat.IsReserved, seat.RowId));
 
             return seatsViewModel;
         }

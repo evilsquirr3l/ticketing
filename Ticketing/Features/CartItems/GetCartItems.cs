@@ -45,7 +45,7 @@ public class GetCartItems : ControllerBase
                 .ToListAsync(cancellationToken: cancellationToken);
 
             var cartItemsViewModel = cartItems.Select(cartItem =>
-                new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId));
+                new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt));
 
             return cartItemsViewModel;
         }

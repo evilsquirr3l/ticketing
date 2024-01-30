@@ -1,4 +1,4 @@
-namespace Ticketing.Models;
+namespace Ticketing.Settings;
 
 public class ServiceBusSettings
 {

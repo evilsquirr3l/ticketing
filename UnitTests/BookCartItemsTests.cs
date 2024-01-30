@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -15,6 +14,7 @@ using Ticketing.Data;
 using Ticketing.Data.Entities;
 using Ticketing.Features.CartItems;
 using Ticketing.Models;
+using Ticketing.Settings;
 using ServiceBusMessage = Azure.Messaging.ServiceBus.ServiceBusMessage;
 
 namespace UnitTests;

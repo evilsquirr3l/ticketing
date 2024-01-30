@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -14,9 +12,9 @@ using Ticketing.Constants;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
 using Ticketing.Models;
+using Ticketing.Settings;
 
 namespace Ticketing.Features.CartItems;
-
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "CartItems")]
@@ -28,31 +26,34 @@ public class BookCartItems : ControllerBase
     {
         _mediator = mediator;
     }
-    
+
     [HttpPut]
     [Route("orders/carts/{cartId:guid}/book")]
     public async Task<Results<Created<PaymentViewModel>, NotFound>> Book(Guid cartId)
     {
         var payment = await _mediator.Send(new BookCartItemsCommand(cartId));
 
-        return payment is null ? TypedResults.NotFound() : TypedResults.Created($"payments/{payment.Id}/complete", payment);
+        return payment is null
+            ? TypedResults.NotFound()
+            : TypedResults.Created($"payments/{payment.Id}/complete", payment);
     }
-    
+
     public record BookCartItemsCommand(Guid CartId) : IRequest<PaymentViewModel?>;
-    
+
     public class BookCartItemsCommandHandler : IRequestHandler<BookCartItemsCommand, PaymentViewModel?>
     {
         private readonly TicketingDbContext _dbContext;
         private readonly IOutputCacheStore _store;
         private readonly ServiceBusSender _sender;
 
-        public BookCartItemsCommandHandler(TicketingDbContext dbContext, IOutputCacheStore store, IAzureClientFactory<ServiceBusSender> serviceBusSenderFactory, IOptions<ServiceBusSettings> settings)
+        public BookCartItemsCommandHandler(TicketingDbContext dbContext, IOutputCacheStore store,
+            IAzureClientFactory<ServiceBusSender> serviceBusSenderFactory, IOptions<ServiceBusSettings> settings)
         {
             _dbContext = dbContext;
             _store = store;
             _sender = serviceBusSenderFactory.CreateClient(settings.Value.QueueName);
         }
-    
+
         public async Task<PaymentViewModel?> Handle(BookCartItemsCommand request, CancellationToken cancellationToken)
         {
             var cartItems = await _dbContext.CartItems
@@ -70,7 +71,7 @@ public class BookCartItems : ControllerBase
 
             await _store.EvictByTagAsync(Tags.Events, cancellationToken);
 
-            var payment = CreatePaymentAsync(cartItems);
+            var payment = await CreatePaymentAsync(cartItems);
 
             await BookSeatsAsync(cartItems);
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -87,7 +88,7 @@ public class BookCartItems : ControllerBase
             return cartItems.Count == 0 || await _dbContext.Carts.FindAsync(request.CartId) is null;
         }
 
-        private Payment CreatePaymentAsync(IEnumerable<CartItem> cartItems)
+        private async Task<Payment> CreatePaymentAsync(IEnumerable<CartItem> cartItems)
         {
             var payment = new Payment
             {
@@ -95,7 +96,7 @@ public class BookCartItems : ControllerBase
                 PaymentDate = DateTime.UtcNow
             };
 
-            _dbContext.Payments.Add(payment);
+            await _dbContext.Payments.AddAsync(payment);
             return payment;
         }
 
@@ -111,7 +112,8 @@ public class BookCartItems : ControllerBase
             }
         }
 
-        private Task SendMessage(Guid paymentId, string operationName, DateTime operationDate, string customerEmail, string customerName, decimal amount)
+        private Task SendMessage(Guid paymentId, string operationName, DateTime operationDate, string customerEmail,
+            string customerName, decimal amount)
         {
             var message = new Message(paymentId, operationName, operationDate, customerEmail, customerName, amount);
             var messageJson = JsonConvert.SerializeObject(message);

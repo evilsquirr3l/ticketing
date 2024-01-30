@@ -1,5 +1,5 @@
 import http from 'k6/http';
-import { check } from 'k6';
+import {check} from 'k6';
 
 export let options = {
     vus: 100,  // 100 users running simultaneously
@@ -7,10 +7,11 @@ export let options = {
 };
 
 export default function () {
+    let cartId = "a1ec968b-d372-428d-9f7d-8951d866e04a";
     let payload = JSON.stringify({
-        cartId: "f10a7cf0-e7a4-4d87-99c8-df37a94135f6",
-        offerId: "49da77ed-c140-4808-8fd6-e577a6744090",
-        eventId: "bbcc7a6a-57f2-4d78-a8ba-456c02e1497e"
+        cartId: cartId,
+        offerId: "55b9d1d3-7a44-4e9a-8c90-b1dc4e1310a7",
+        eventId: "7bceba9e-d780-4ece-8486-a3d287f8d95c"
     });
 
     let headers = {
@@ -18,7 +19,7 @@ export default function () {
         'accept': 'application/json'
     };
 
-    let response = http.post('http://localhost:5161/orders/carts/f10a7cf0-e7a4-4d87-99c8-df37a94135f6', payload, { headers: headers });
+    let response = http.post(`https://localhost:7040/orders/carts/${cartId}`, payload, {headers: headers});
 
-    check(response, { 'status was 201': (r) => r.status === 201 });
+    check(response, {'status was 201': (r) => r.status === 201});
 }
