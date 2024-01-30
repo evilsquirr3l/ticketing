@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.OpenApi.Models;
 using Ticketing.Data;
-using Ticketing.Models;
+using Ticketing.Settings;
 using Vernou.Swashbuckle.HttpResultsAdapter;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,10 +17,13 @@ var postgresConnectionString = builder.Configuration.GetValue<string>("POSTGRESQ
 var redisConnectionString = builder.Configuration.GetValue<string>("RedisCacheCONNSTR_RedisConnection");
 var queueName = builder.Configuration.GetValue<string>("ServiceBusSettings:QueueName");
 var serviceBusNamespace = builder.Configuration.GetValue<string>("ServiceBusCONNSTR_ServiceBusConnection");
-var cacheExpiration = builder.Configuration.GetValue<TimeSpan>("CacheExpirationInMinutes");
+var cacheExpiration = builder.Configuration.GetValue<int>("CacheExpirationInMinutes");
 
 builder.Services.Configure<ServiceBusSettings>(options =>
     builder.Configuration.GetSection("ServiceBusSettings").Bind(options));
+
+builder.Services.Configure<CartItemsExpiration>(options =>
+    builder.Configuration.GetSection("AppSettings").Bind(options));
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -30,7 +33,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddResponseCaching();
-builder.Services.AddOutputCache(opt => opt.DefaultExpirationTimeSpan = cacheExpiration)
+builder.Services.AddOutputCache(opt => opt.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(cacheExpiration))
     .AddStackExchangeRedisOutputCache(options => { options.Configuration = redisConnectionString; });
 
 builder.Services.AddSwaggerGen(c =>
@@ -70,6 +73,7 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<HttpResultsOperationFilter>();
 });
 
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 builder.Services.AddDbContextPool<TicketingDbContext>(x => { x.UseNpgsql(postgresConnectionString); });

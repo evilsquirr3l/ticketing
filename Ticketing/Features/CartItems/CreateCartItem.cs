@@ -43,10 +43,12 @@ public class CreateCartItem : ControllerBase
     public class CreateCartItemCommandHandler : IRequestHandler<CreateCartItemCommand, CartItemViewModel?>
     {
         private readonly TicketingDbContext _dbContext;
+        private readonly TimeProvider _timeProvider;
 
-        public CreateCartItemCommandHandler(TicketingDbContext dbContext)
+        public CreateCartItemCommandHandler(TicketingDbContext dbContext, TimeProvider timeProvider)
         {
             _dbContext = dbContext;
+            _timeProvider = timeProvider;
         }
 
         public async Task<CartItemViewModel?> Handle(CreateCartItemCommand request, CancellationToken cancellationToken)
@@ -61,13 +63,22 @@ public class CreateCartItem : ControllerBase
             var cartItem = new CartItem
             {
                 CartId = request.CartId,
-                OfferId = request.OfferId
+                OfferId = request.OfferId,
+                CreatedAt = _timeProvider.GetUtcNow()
             };
 
-            await _dbContext.CartItems.AddAsync(cartItem, cancellationToken);
+            await TrySaveCartItemsAndReserveSeatsAsync(request, cartItem, cancellationToken);
 
+            return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt);
+        }
+
+        private async Task TrySaveCartItemsAndReserveSeatsAsync(CreateCartItemCommand request,
+            CartItem cartItem, CancellationToken cancellationToken)
+        {
             try
             {
+                await _dbContext.CartItems.AddAsync(cartItem, cancellationToken);
+                await ReserveSeatAsync(request, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException e)
@@ -75,8 +86,6 @@ public class CreateCartItem : ControllerBase
                 Console.WriteLine(e.Message);
                 throw new InvalidOperationException("This offer is already in the cart.", e.InnerException);
             }
-
-            return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId);
         }
 
         private async Task<bool> CartItemsAreNotFoundAsync(CreateCartItemCommand request)
@@ -97,6 +106,15 @@ public class CreateCartItem : ControllerBase
             {
                 throw new InvalidOperationException("Seat is already reserved.");
             }
+        }
+
+        private async Task ReserveSeatAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
+        {
+            var offer = await _dbContext.Offers
+                .Include(x => x.Seat)
+                .FirstOrDefaultAsync(x => x.Id == request.OfferId, cancellationToken: cancellationToken);
+
+            offer!.Seat.IsReserved = true;
         }
     }
 }
