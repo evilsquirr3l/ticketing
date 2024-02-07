@@ -101,7 +101,7 @@ EOT
 
 resource "null_resource" "azurerm_linux_web_app_publish" {
   provisioner "local-exec" {
-    working_dir = "../"
+    working_dir = "../src/"
     command     = local.publish_web_app
   }
 
@@ -310,7 +310,7 @@ EOT
 
 resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
-    working_dir = "../NotificationHandler"
+    working_dir = "../src/NotificationHandler"
     command     = local.publish_function_app
   }
 

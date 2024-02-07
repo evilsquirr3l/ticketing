@@ -5,8 +5,8 @@ using NUnit.Framework;
 using Testcontainers.PostgreSql;
 using Ticketing.Data;
 using Ticketing.Data.Entities;
+using Ticketing.Features.CartItems;
 using Ticketing.Settings;
-using static Ticketing.Features.CartItems.DeleteExpiredCartItems;
 
 namespace UnitTests;
 
@@ -58,9 +58,9 @@ public class DeleteExpiredCartItemsTests
             CreatedAt = _utcNow.AddMinutes(-CartItemsExpiration - 1)
         });
         await dbContext.SaveChangesAsync();
-        var handler = new DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
+        var handler = new DeleteExpiredCartItems.DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
 
-        await handler.Handle(new DeleteExpiredCartItemsCommand(), CancellationToken.None);
+        await handler.Handle(new DeleteExpiredCartItems.DeleteExpiredCartItemsCommand(), CancellationToken.None);
 
         var cartItems = await dbContext.CartItems.ToListAsync();
         Assert.That(cartItems, Is.Empty);
@@ -84,9 +84,9 @@ public class DeleteExpiredCartItemsTests
             CreatedAt = _utcNow.AddMinutes(-CartItemsExpiration + 1)
         });
         await dbContext.SaveChangesAsync();
-        var handler = new DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
+        var handler = new DeleteExpiredCartItems.DeleteExpiredCartItemsCommandHandler(dbContext, _timeProvider.Object, _options);
 
-        await handler.Handle(new DeleteExpiredCartItemsCommand(), CancellationToken.None);
+        await handler.Handle(new DeleteExpiredCartItems.DeleteExpiredCartItemsCommand(), CancellationToken.None);
 
         var cartItems = await dbContext.CartItems.ToListAsync();
         Assert.That(cartItems, Is.Not.Empty);

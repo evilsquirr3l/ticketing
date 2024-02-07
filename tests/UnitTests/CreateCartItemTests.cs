@@ -5,7 +5,6 @@ using Moq;
 using NUnit.Framework;
 using Testcontainers.PostgreSql;
 using Ticketing.Data;
-using Ticketing.Data.Entities;
 using Ticketing.Features.CartItems;
 using Ticketing.Models;
 
