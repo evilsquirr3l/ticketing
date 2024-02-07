@@ -9,45 +9,32 @@ namespace Ticketing.Features.Sections;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "Sections")]
-public class GetSectionsInVenue : ControllerBase
+public class GetSectionsInVenue(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public GetSectionsInVenue(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpGet("{venueId:guid}/sections")]
     public async Task<Results<Ok<IEnumerable<SectionViewModel>>, NotFound>> GetAllSections(Guid venueId)
     {
-        var result = await _mediator.Send(new GetAllSectionsQuery(venueId));
+        var result = await mediator.Send(new GetAllSectionsQuery(venueId));
 
         return result is null ? TypedResults.NotFound() : TypedResults.Ok(result);
     }
 
     public record GetAllSectionsQuery(Guid VenueId) : IRequest<IEnumerable<SectionViewModel>?>;
 
-    public class GetAllSectionsQueryHandler : IRequestHandler<GetAllSectionsQuery, IEnumerable<SectionViewModel>?>
+    public class GetAllSectionsQueryHandler(TicketingDbContext dbContext)
+        : IRequestHandler<GetAllSectionsQuery, IEnumerable<SectionViewModel>?>
     {
-        private readonly TicketingDbContext _dbContext;
-
-        public GetAllSectionsQueryHandler(TicketingDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-
         public async Task<IEnumerable<SectionViewModel>?> Handle(GetAllSectionsQuery request,
             CancellationToken cancellationToken)
         {
-            var venue = await _dbContext.Venues.FindAsync(request?.VenueId);
+            var venue = await dbContext.Venues.FindAsync(request?.VenueId);
 
             if (venue is null)
             {
                 return null;
             }
             
-            var sections = await _dbContext.Manifests
+            var sections = await dbContext.Manifests
                 .Include(x => x.Venue)
                 .Where(x => x.Venue.Id == request!.VenueId)
                 .SelectMany(x => x.Sections)

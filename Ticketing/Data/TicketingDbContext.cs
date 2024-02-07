@@ -3,13 +3,8 @@ using Ticketing.Data.Entities;
 
 namespace Ticketing.Data;
 
-public class TicketingDbContext : DbContext
+public class TicketingDbContext(DbContextOptions<TicketingDbContext> options) : DbContext(options)
 {
-    public TicketingDbContext(DbContextOptions<TicketingDbContext> options) : base(options)
-    {
-        
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Offer>()

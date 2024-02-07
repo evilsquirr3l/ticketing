@@ -9,38 +9,25 @@ namespace Ticketing.Features.CartItems;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "CartItems")]
-public class GetCartItems : ControllerBase
+public class GetCartItems(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public GetCartItems(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-    
     [HttpGet]
     [Route("orders/carts/{cartId:guid}")]
     public async Task<Results<NotFound, Ok<IEnumerable<CartItemViewModel>>>> GetAllCartItems(Guid cartId)
     {
-        var cartItems = await _mediator.Send(new GetAllCartItemsQuery(cartId));
+        var cartItems = await mediator.Send(new GetAllCartItemsQuery(cartId));
 
         return cartItems is null ? TypedResults.NotFound() : TypedResults.Ok(cartItems);
     }
     
     public record GetAllCartItemsQuery(Guid CartId) : IRequest<IEnumerable<CartItemViewModel>?>;
     
-    public class GetAllCartItemsQueryHandler : IRequestHandler<GetAllCartItemsQuery, IEnumerable<CartItemViewModel>?>
+    public class GetAllCartItemsQueryHandler(TicketingDbContext dbContext)
+        : IRequestHandler<GetAllCartItemsQuery, IEnumerable<CartItemViewModel>?>
     {
-        private readonly TicketingDbContext _dbContext;
-
-        public GetAllCartItemsQueryHandler(TicketingDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-    
         public async Task<IEnumerable<CartItemViewModel>?> Handle(GetAllCartItemsQuery request, CancellationToken cancellationToken)
         {
-            var cartItems = await _dbContext.CartItems
+            var cartItems = await dbContext.CartItems
                 .Where(x => x.CartId == request.CartId)
                 .ToListAsync(cancellationToken: cancellationToken);
 

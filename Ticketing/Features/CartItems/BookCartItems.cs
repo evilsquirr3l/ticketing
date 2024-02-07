@@ -18,20 +18,13 @@ namespace Ticketing.Features.CartItems;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "CartItems")]
-public class BookCartItems : ControllerBase
+public class BookCartItems(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public BookCartItems(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpPut]
     [Route("orders/carts/{cartId:guid}/book")]
     public async Task<Results<Created<PaymentViewModel>, NotFound>> Book(Guid cartId)
     {
-        var payment = await _mediator.Send(new BookCartItemsCommand(cartId));
+        var payment = await mediator.Send(new BookCartItemsCommand(cartId));
 
         return payment is null
             ? TypedResults.NotFound()
@@ -40,23 +33,18 @@ public class BookCartItems : ControllerBase
 
     public record BookCartItemsCommand(Guid CartId) : IRequest<PaymentViewModel?>;
 
-    public class BookCartItemsCommandHandler : IRequestHandler<BookCartItemsCommand, PaymentViewModel?>
+    public class BookCartItemsCommandHandler(
+        TicketingDbContext dbContext,
+        IOutputCacheStore store,
+        IAzureClientFactory<ServiceBusSender> serviceBusSenderFactory,
+        IOptions<ServiceBusSettings> settings)
+        : IRequestHandler<BookCartItemsCommand, PaymentViewModel?>
     {
-        private readonly TicketingDbContext _dbContext;
-        private readonly IOutputCacheStore _store;
-        private readonly ServiceBusSender _sender;
-
-        public BookCartItemsCommandHandler(TicketingDbContext dbContext, IOutputCacheStore store,
-            IAzureClientFactory<ServiceBusSender> serviceBusSenderFactory, IOptions<ServiceBusSettings> settings)
-        {
-            _dbContext = dbContext;
-            _store = store;
-            _sender = serviceBusSenderFactory.CreateClient(settings.Value.QueueName);
-        }
+        private readonly ServiceBusSender _sender = serviceBusSenderFactory.CreateClient(settings.Value.QueueName);
 
         public async Task<PaymentViewModel?> Handle(BookCartItemsCommand request, CancellationToken cancellationToken)
         {
-            var cartItems = await _dbContext.CartItems
+            var cartItems = await dbContext.CartItems
                 .Include(x => x.Offer)
                 .ThenInclude(offer => offer.Price)
                 .Include(x => x.Cart)
@@ -69,12 +57,12 @@ public class BookCartItems : ControllerBase
                 return null;
             }
 
-            await _store.EvictByTagAsync(Tags.Events, cancellationToken);
+            await store.EvictByTagAsync(Tags.Events, cancellationToken);
 
             var payment = await CreatePaymentAsync(cartItems);
 
             await BookSeatsAsync(cartItems);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             var customer = cartItems[0].Cart.Customer;
             await SendMessage(payment.Id, "Book", payment.PaymentDate!.Value,
@@ -85,7 +73,7 @@ public class BookCartItems : ControllerBase
 
         private async Task<bool> CartItemsAreNotFoundAsync(BookCartItemsCommand request, List<CartItem> cartItems)
         {
-            return cartItems.Count == 0 || await _dbContext.Carts.FindAsync(request.CartId) is null;
+            return cartItems.Count == 0 || await dbContext.Carts.FindAsync(request.CartId) is null;
         }
 
         private async Task<Payment> CreatePaymentAsync(IEnumerable<CartItem> cartItems)
@@ -96,7 +84,7 @@ public class BookCartItems : ControllerBase
                 PaymentDate = DateTime.UtcNow
             };
 
-            await _dbContext.Payments.AddAsync(payment);
+            await dbContext.Payments.AddAsync(payment);
             return payment;
         }
 
@@ -104,7 +92,7 @@ public class BookCartItems : ControllerBase
         {
             foreach (var cartItem in cartItems)
             {
-                var seat = await _dbContext.Seats.FindAsync(cartItem.Offer.SeatId);
+                var seat = await dbContext.Seats.FindAsync(cartItem.Offer.SeatId);
                 if (seat is not null)
                 {
                     seat.IsReserved = true;

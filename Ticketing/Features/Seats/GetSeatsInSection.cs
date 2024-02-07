@@ -12,35 +12,22 @@ namespace Ticketing.Features.Seats;
 [ApiController]
 [ApiExplorerSettings(GroupName = "Seats")]
 [OutputCache(Tags = [Tags.Seats])]
-public class GetSeatsInSection : ControllerBase
+public class GetSeatsInSection(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public GetSeatsInSection(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpGet]
     [Route("events/{eventId:guid}/sections/{sectionId:guid}/seats")]
     public async Task<Results<NotFound, Ok<IEnumerable<SeatViewModel>>>> GetAllSeats(Guid eventId, Guid sectionId)
     {
-        var result = await _mediator.Send(new GetAllSeatsQuery(eventId, sectionId));
+        var result = await mediator.Send(new GetAllSeatsQuery(eventId, sectionId));
 
         return result is null ? TypedResults.NotFound() : TypedResults.Ok(result);
     }
 
     public record GetAllSeatsQuery(Guid EventId, Guid SectionId) : IRequest<IEnumerable<SeatViewModel>?>;
 
-    public class GetAllSeatsQueryHandler : IRequestHandler<GetAllSeatsQuery, IEnumerable<SeatViewModel>?>
+    public class GetAllSeatsQueryHandler(TicketingDbContext dbContext)
+        : IRequestHandler<GetAllSeatsQuery, IEnumerable<SeatViewModel>?>
     {
-        private readonly TicketingDbContext _dbContext;
-
-        public GetAllSeatsQueryHandler(TicketingDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-
         public async Task<IEnumerable<SeatViewModel>?> Handle(GetAllSeatsQuery request,
             CancellationToken cancellationToken)
         {
@@ -49,7 +36,7 @@ public class GetSeatsInSection : ControllerBase
                 return null;
             }
 
-            var seats = await _dbContext.Manifests
+            var seats = await dbContext.Manifests
                 .Include(x => x.Venue)
                 .Where(x => x.Venue.EventId == request.EventId)
                 .SelectMany(x => x.Sections)
@@ -67,8 +54,8 @@ public class GetSeatsInSection : ControllerBase
 
         private async Task<bool> EventAndSectionAreNotFoundAsync(GetAllSeatsQuery request)
         {
-            return await _dbContext.Events.FindAsync(request.EventId) is null ||
-                   await _dbContext.Sections.FindAsync(request.SectionId) is null;
+            return await dbContext.Events.FindAsync(request.EventId) is null ||
+                   await dbContext.Sections.FindAsync(request.SectionId) is null;
         }
     }
 }

@@ -8,15 +8,8 @@ using SharedModels;
 
 namespace NotificationHandler;
 
-public class ServiceBusQueueTrigger
+public class ServiceBusQueueTrigger(ILogger<ServiceBusQueueTrigger> logger)
 {
-    private readonly ILogger<ServiceBusQueueTrigger> _logger;
-
-    public ServiceBusQueueTrigger(ILogger<ServiceBusQueueTrigger> logger)
-    {
-        _logger = logger;
-    }
-
     [Function(nameof(ServiceBusReceivedMessageWithStringProperties))]
     public async Task ServiceBusReceivedMessageWithStringProperties(
         [ServiceBusTrigger("ticketing_servicebus_queue", Connection = "ServiceBusConnection")]
@@ -41,7 +34,7 @@ public class ServiceBusQueueTrigger
         }
         catch (RequestFailedException ex)
         {
-            _logger.LogError("Email send operation failed with error code: {ex.ErrorCode}, message: {ex.Message}", ex.ErrorCode, ex.Message);
+            logger.LogError("Email send operation failed with error code: {ex.ErrorCode}, message: {ex.Message}", ex.ErrorCode, ex.Message);
         }
     }
 }

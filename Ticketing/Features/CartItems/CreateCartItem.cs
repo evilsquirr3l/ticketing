@@ -10,15 +10,8 @@ namespace Ticketing.Features.CartItems;
 
 [ApiController]
 [ApiExplorerSettings(GroupName = "CartItems")]
-public class CreateCartItem : ControllerBase
+public class CreateCartItem(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public CreateCartItem(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpPost]
     [Route("orders/carts/{cartId:guid}")]
     public async Task<Results<BadRequest<string>, Created<CartItemViewModel>>> Create(Guid cartId,
@@ -26,7 +19,7 @@ public class CreateCartItem : ControllerBase
     {
         try
         {
-            var cartItem = await _mediator.Send(command with { CartId = cartId });
+            var cartItem = await mediator.Send(command with { CartId = cartId });
 
             return cartItem is null
                 ? TypedResults.BadRequest("Cart, Offer or Event not found.")
@@ -40,17 +33,9 @@ public class CreateCartItem : ControllerBase
 
     public record CreateCartItemCommand(Guid CartId, Guid OfferId, Guid EventId) : IRequest<CartItemViewModel?>;
 
-    public class CreateCartItemCommandHandler : IRequestHandler<CreateCartItemCommand, CartItemViewModel?>
+    public class CreateCartItemCommandHandler(TicketingDbContext dbContext, TimeProvider timeProvider)
+        : IRequestHandler<CreateCartItemCommand, CartItemViewModel?>
     {
-        private readonly TicketingDbContext _dbContext;
-        private readonly TimeProvider _timeProvider;
-
-        public CreateCartItemCommandHandler(TicketingDbContext dbContext, TimeProvider timeProvider)
-        {
-            _dbContext = dbContext;
-            _timeProvider = timeProvider;
-        }
-
         public async Task<CartItemViewModel?> Handle(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
             if (await CartItemsAreNotFoundAsync(request))
@@ -64,7 +49,7 @@ public class CreateCartItem : ControllerBase
             {
                 CartId = request.CartId,
                 OfferId = request.OfferId,
-                CreatedAt = _timeProvider.GetUtcNow()
+                CreatedAt = timeProvider.GetUtcNow()
             };
 
             await TrySaveCartItemsAndReserveSeatsAsync(request, cartItem, cancellationToken);
@@ -77,9 +62,9 @@ public class CreateCartItem : ControllerBase
         {
             try
             {
-                await _dbContext.CartItems.AddAsync(cartItem, cancellationToken);
+                await dbContext.CartItems.AddAsync(cartItem, cancellationToken);
                 await ReserveSeatAsync(request, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException e)
             {
@@ -90,15 +75,15 @@ public class CreateCartItem : ControllerBase
 
         private async Task<bool> CartItemsAreNotFoundAsync(CreateCartItemCommand request)
         {
-            return await _dbContext.Carts.FindAsync(request.CartId) is null ||
-                   await _dbContext.Offers.FindAsync(request.OfferId) is null ||
-                   await _dbContext.Events.FindAsync(request.EventId) is null;
+            return await dbContext.Carts.FindAsync(request.CartId) is null ||
+                   await dbContext.Offers.FindAsync(request.OfferId) is null ||
+                   await dbContext.Events.FindAsync(request.EventId) is null;
         }
 
         private async Task ThrowIfSeatIsReservedAsync(CreateCartItemCommand request,
             CancellationToken cancellationToken)
         {
-            var offer = await _dbContext.Offers
+            var offer = await dbContext.Offers
                 .Include(x => x.Seat)
                 .FirstOrDefaultAsync(x => x.Id == request.OfferId, cancellationToken: cancellationToken);
 
@@ -110,7 +95,7 @@ public class CreateCartItem : ControllerBase
 
         private async Task ReserveSeatAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
-            var offer = await _dbContext.Offers
+            var offer = await dbContext.Offers
                 .Include(x => x.Seat)
                 .FirstOrDefaultAsync(x => x.Id == request.OfferId, cancellationToken: cancellationToken);
 
