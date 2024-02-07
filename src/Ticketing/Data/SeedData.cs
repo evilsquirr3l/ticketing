@@ -11,7 +11,7 @@ public static class MigrationManager
         await using var context = scope.ServiceProvider.GetRequiredService<TicketingDbContext>();
         try
         {
-            await context.Database.EnsureCreatedAsync();
+            await context.Database.MigrateAsync();
 
             if (!await context.Venues.AnyAsync())
             {
@@ -24,7 +24,7 @@ public static class MigrationManager
                 var manifest = new Manifest { Venue = venue, Map = "maybe a byte array? maybe a json?" };
                 var section = new Section { Name = "Section 1", Manifest = manifest };
                 var row = new Row { Number = "Row 1", Section = section };
-                var seat = new Seat { SeatNumber = "Seat 1", Row = row };
+                var seat = new Seat { SeatNumber = "Seat 0", Row = row };
                 var price = new Price { Amount = 100 };
                 var offer = new Offer { Event = event1, Seat = seat, OfferType = "VIP", Price = price };
                 var payment = new Payment { Amount = 100, Offer = offer, PaymentDate = DateTimeOffset.UtcNow };
