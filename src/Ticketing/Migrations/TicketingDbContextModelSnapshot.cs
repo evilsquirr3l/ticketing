@@ -38,7 +38,7 @@ namespace Ticketing.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Carts");
+                    b.ToTable("Carts", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.CartItem", b =>
@@ -66,7 +66,7 @@ namespace Ticketing.Migrations
                     b.HasIndex("CartId", "OfferId")
                         .IsUnique();
 
-                    b.ToTable("CartItems");
+                    b.ToTable("CartItems", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Customer", b =>
@@ -88,7 +88,7 @@ namespace Ticketing.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Event", b =>
@@ -97,7 +97,7 @@ namespace Ticketing.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("Date")
+                    b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
@@ -113,7 +113,7 @@ namespace Ticketing.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Events");
+                    b.ToTable("Events", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Manifest", b =>
@@ -131,7 +131,7 @@ namespace Ticketing.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Manifests");
+                    b.ToTable("Manifests", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Offer", b =>
@@ -175,7 +175,7 @@ namespace Ticketing.Migrations
 
                     b.HasIndex("SectionId");
 
-                    b.ToTable("Offers", t =>
+                    b.ToTable("Offers", null, t =>
                         {
                             t.HasCheckConstraint("offer_section_seat_check", "(\"SectionId\" IS NOT NULL AND \"SeatId\" IS NULL) OR (\"SectionId\" IS NULL AND \"SeatId\" IS NOT NULL)");
                         });
@@ -193,12 +193,12 @@ namespace Ticketing.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTimeOffset?>("PaymentDate")
+                    b.Property<DateTime?>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Price", b =>
@@ -215,7 +215,7 @@ namespace Ticketing.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Prices");
+                    b.ToTable("Prices", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Row", b =>
@@ -238,7 +238,7 @@ namespace Ticketing.Migrations
 
                     b.HasIndex("SectionId");
 
-                    b.ToTable("Rows");
+                    b.ToTable("Rows", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Seat", b =>
@@ -264,7 +264,7 @@ namespace Ticketing.Migrations
 
                     b.HasIndex("RowId");
 
-                    b.ToTable("Seats");
+                    b.ToTable("Seats", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Section", b =>
@@ -287,7 +287,7 @@ namespace Ticketing.Migrations
 
                     b.HasIndex("ManifestId");
 
-                    b.ToTable("Sections");
+                    b.ToTable("Sections", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Venue", b =>
@@ -317,7 +317,7 @@ namespace Ticketing.Migrations
                     b.HasIndex("ManifestId")
                         .IsUnique();
 
-                    b.ToTable("Venues");
+                    b.ToTable("Venues", (string)null);
                 });
 
             modelBuilder.Entity("Ticketing.Data.Entities.Cart", b =>
