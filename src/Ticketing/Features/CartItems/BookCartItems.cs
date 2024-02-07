@@ -65,8 +65,8 @@ public class BookCartItems(IMediator mediator) : ControllerBase
             await dbContext.SaveChangesAsync(cancellationToken);
 
             var customer = cartItems[0].Cart.Customer;
-            await SendMessage(payment.Id, "Book", payment.PaymentDate!.Value,
-                customer.Email, customer.Name, payment.Amount);
+            await SendMessage(new Message(payment.Id, "Book", payment.PaymentDate!.Value,
+                customer.Email, customer.Name, payment.Amount));
 
             return new PaymentViewModel(payment.Id, payment.Amount, payment.PaymentDate);
         }
@@ -81,7 +81,7 @@ public class BookCartItems(IMediator mediator) : ControllerBase
             var payment = new Payment
             {
                 Amount = cartItems.Sum(x => x.Offer.Price.Amount),
-                PaymentDate = DateTime.UtcNow
+                PaymentDate = DateTimeOffset.UtcNow
             };
 
             await dbContext.Payments.AddAsync(payment);
@@ -100,10 +100,8 @@ public class BookCartItems(IMediator mediator) : ControllerBase
             }
         }
 
-        private Task SendMessage(Guid paymentId, string operationName, DateTime operationDate, string customerEmail,
-            string customerName, decimal amount)
+        private Task SendMessage(Message message)
         {
-            var message = new Message(paymentId, operationName, operationDate, customerEmail, customerName, amount);
             var messageJson = JsonConvert.SerializeObject(message);
             var serviceBusMessage = new ServiceBusMessage(messageJson);
 

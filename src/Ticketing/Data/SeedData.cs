@@ -18,7 +18,7 @@ public static class MigrationManager
                 var venue = new Venue { Location = "New York" };
                 var event1 = new Event
                 {
-                    Name = "Event 1", Venue = venue, Date = DateTime.UtcNow.AddDays(1),
+                    Name = "Event 1", Venue = venue, Date = DateTimeOffset.UtcNow.AddDays(1),
                     Description = "Tomorrow's disco!"
                 };
                 var manifest = new Manifest { Venue = venue, Map = "maybe a byte array? maybe a json?" };
@@ -27,7 +27,7 @@ public static class MigrationManager
                 var seat = new Seat { SeatNumber = "Seat 1", Row = row };
                 var price = new Price { Amount = 100 };
                 var offer = new Offer { Event = event1, Seat = seat, OfferType = "VIP", Price = price };
-                var payment = new Payment { Amount = 100, Offer = offer, PaymentDate = DateTime.UtcNow };
+                var payment = new Payment { Amount = 100, Offer = offer, PaymentDate = DateTimeOffset.UtcNow };
                 var customer = new Customer { Name = "Jon Doe", Email = "example@gmail.com" };
                 var cart = new Cart { Customer = customer };
                 var cartItem = new CartItem { Offer = offer, Cart = cart, CreatedAt = DateTimeOffset.UtcNow };

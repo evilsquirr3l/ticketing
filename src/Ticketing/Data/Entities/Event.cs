@@ -8,7 +8,7 @@ public class Event : BaseEntity
     
     public required string Description { get; set; }
     
-    public required DateTime Date { get; set; }
+    public required DateTimeOffset Date { get; set; }
 
     public virtual Venue Venue { get; set; } = null!;
 

@@ -61,7 +61,7 @@ public class BookCartItemsTests
             Assert.That(payment, Is.Not.Null);
             Assert.That(payment!.Id, Is.Not.EqualTo(Guid.Empty));
             Assert.That(payment!.Amount, Is.EqualTo(300m));
-            Assert.That(payment!.PaymentDate, Is.EqualTo(DateTime.UtcNow).Within(1).Seconds);
+            Assert.That(payment!.PaymentDate, Is.EqualTo(DateTimeOffset.UtcNow).Within(1).Seconds);
         });
     }
 

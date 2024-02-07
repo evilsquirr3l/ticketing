@@ -3,7 +3,7 @@
 public record Message(
     Guid PaymentId,
     string OperationName,
-    DateTime OperationDate,
+    DateTimeOffset OperationDate,
     string CustomerEmail,
     string CustomerName,
     decimal Amount);

@@ -33,7 +33,7 @@ public class CompletePayment(IMediator mediator) : ControllerBase
             }
 
             //TODO: update to .NET8 and use TimeProvider
-            payment.PaymentDate = DateTime.UtcNow;
+            payment.PaymentDate = DateTimeOffset.UtcNow;
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
