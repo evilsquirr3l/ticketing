@@ -57,7 +57,7 @@ public class BookCartItemsTests
         var mediator = new Mock<IMediator>();
         var cartId = Guid.NewGuid();
         var paymentId = Guid.NewGuid();
-        var paymentViewModel = new PaymentViewModel(paymentId, 100, DateTime.Now);
+        var paymentViewModel = new PaymentViewModel(paymentId, 100, DateTimeOffset.Now);
         mediator.Setup(x => x.Send(It.Is<BookCartItems.BookCartItemsCommand>(x => x.CartId == cartId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(paymentViewModel);
@@ -203,7 +203,7 @@ public class BookCartItemsTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Event2",
-            Date = DateTime.UtcNow,
+            Date = DateTimeOffset.UtcNow,
             Description = "Test Description2"
         };
         

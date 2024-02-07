@@ -40,7 +40,7 @@ public class GetVenuesTests
             (
                 new List<VenueViewModel>
                 {
-                    new(Guid.NewGuid(), "Test location", new EventViewModel(Guid.NewGuid(), "Test Event", DateTime.Now, "Test Description"), new ManifestViewModel(Guid.NewGuid(), "test manifest map"))
+                    new(Guid.NewGuid(), "Test location", new EventViewModel(Guid.NewGuid(), "Test Event", DateTimeOffset.Now, "Test Description"), new ManifestViewModel(Guid.NewGuid(), "test manifest map"))
                 },
                 new Page
                 {
@@ -88,7 +88,7 @@ public class GetVenuesTests
             {
                 Id = Guid.NewGuid(),
                 Name = "Test Event",
-                Date = DateTime.UtcNow,
+                Date = DateTimeOffset.UtcNow,
                 Description = "Test Description"
             },
             Location = "Test location",
@@ -107,7 +107,7 @@ public class GetVenuesTests
             (
                 new List<VenueViewModel>
                 {
-                    new(Guid.NewGuid(), "Test location", new EventViewModel(Guid.NewGuid(), "Test Event", DateTime.Now, "Test Description"), new ManifestViewModel(Guid.NewGuid(), "test manifest map"))
+                    new(Guid.NewGuid(), "Test location", new EventViewModel(Guid.NewGuid(), "Test Event", DateTimeOffset.Now, "Test Description"), new ManifestViewModel(Guid.NewGuid(), "test manifest map"))
                 },
                 new Page
                 {

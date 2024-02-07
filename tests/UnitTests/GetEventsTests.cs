@@ -40,7 +40,7 @@ public class GetEventsTests
             (
                 new List<EventViewModel>
                 {
-                    new(Guid.NewGuid(), "Test Event", DateTime.Now, "Test Description")
+                    new(Guid.NewGuid(), "Test Event", DateTimeOffset.Now, "Test Description")
                 },
                 new Page
                 {
@@ -92,14 +92,14 @@ public class GetEventsTests
             {
                 Id = Guid.NewGuid(),
                 Name = "Test Event",
-                Date = DateTime.UtcNow,
+                Date = DateTimeOffset.UtcNow,
                 Description = "Test Description"
             },
             new()
             {
                 Id = Guid.NewGuid(),
                 Name = "Test Event 2",
-                Date = DateTime.UtcNow,
+                Date = DateTimeOffset.UtcNow,
                 Description = "Test Description 2"
             }
         };

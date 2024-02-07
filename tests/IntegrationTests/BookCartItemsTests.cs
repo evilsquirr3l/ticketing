@@ -93,7 +93,7 @@ public class BookCartItemsTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Event2",
-            Date = DateTime.UtcNow,
+            Date = DateTimeOffset.UtcNow,
             Description = "Test Description2"
         };
 
