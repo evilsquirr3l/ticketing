@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Ticketing.Data;
 using Ticketing.Models;
@@ -11,11 +12,11 @@ public class GetPaymentById(IMediator mediator) : ControllerBase
 {
     [HttpGet]
     [Route("payments/{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<Results<Ok<PaymentViewModel>, NotFound>> GetById(Guid id)
     {
         var payment = await mediator.Send(new GetPaymentByIdQuery(id));
 
-        return payment is null ? NotFound() : Ok(payment);
+        return payment is null ? TypedResults.NotFound() : TypedResults.Ok(payment);
     }
 
     public record GetPaymentByIdQuery(Guid Id) : IRequest<PaymentViewModel?>;

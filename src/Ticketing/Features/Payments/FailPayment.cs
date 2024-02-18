@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Ticketing.Data;
@@ -12,11 +13,11 @@ public class FailPayment(IMediator mediator) : ControllerBase
 {
     [HttpPost]
     [Route("payments/{paymentId:guid}/failed")]
-    public async Task<IActionResult> Fail(Guid paymentId)
+    public async Task<Results<Ok<PaymentViewModel>, NotFound>> Fail(Guid paymentId)
     {
         var payment = await mediator.Send(new FailPaymentCommand(paymentId));
 
-        return payment is null ? NotFound() : Ok(payment);
+        return payment is null ? TypedResults.NotFound() : TypedResults.Ok(payment);
     }
 
     public record FailPaymentCommand(Guid PaymentId) : IRequest<PaymentViewModel?>;

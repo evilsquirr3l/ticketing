@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Ticketing.Data;
 using Ticketing.Models;
@@ -11,11 +12,11 @@ public class CompletePayment(IMediator mediator) : ControllerBase
 {
     [HttpPost]
     [Route("payments/{paymentId:guid}/complete")]
-    public async Task<IActionResult> Complete(Guid paymentId)
+    public async Task<Results<Ok<PaymentViewModel>, NotFound>> Complete(Guid paymentId)
     {
         var payment = await mediator.Send(new CompletePaymentCommand(paymentId));
 
-        return payment is null ? NotFound() : Ok(payment);
+        return payment is null ? TypedResults.NotFound() : TypedResults.Ok(payment);
     }
     
     public record CompletePaymentCommand(Guid PaymentId) : IRequest<PaymentViewModel?>;
