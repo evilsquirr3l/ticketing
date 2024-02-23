@@ -31,8 +31,7 @@ practical cases of asynchronous and multithreaded development topics.
 2. Run `az login` to authenticate with Azure
 
 > [!WARNING]
-> (Windows only) Change the line that puts deployment files to a zip archive in file 'terraform/main.tf'
-> ```zip -j ticketing.zip ./Ticketing/bin/Release/net8.0/publish/*```
+> (Windows only) Change [this line](https://github.com/evilsquirr3l/ticketing/blob/main/terraform/main.tf#L97) that puts deployment files to a zip archive
 > to something like
 > ```Compress-Archive -Path .\Ticketing\bin\Release\net8.0\publish\* -DestinationPath ticketing.zip -Force```
 > (I never tested it on Windows)
