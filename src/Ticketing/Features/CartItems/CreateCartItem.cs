@@ -1,3 +1,4 @@
+using ErrorOr;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -14,36 +15,32 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
 {
     [HttpPost]
     [Route("orders/carts/{cartId:guid}")]
-    public async Task<Results<BadRequest<string>, Created<CartItemViewModel>>> Create(Guid cartId,
-        CreateCartItemCommand command)
+    public async Task<Results<BadRequest<string>, Created<CartItemViewModel>>> Create(Guid cartId, CreateCartItemCommand command)
     {
-        try
-        {
-            var cartItem = await mediator.Send(command with { CartId = cartId });
+        var result = await mediator.Send(command with { CartId = cartId });
 
-            return cartItem is null
-                ? TypedResults.BadRequest("Cart, Offer or Event not found.")
-                : TypedResults.Created($"orders/carts/{cartId}", cartItem);
-        }
-        catch (InvalidOperationException e)
-        {
-            return TypedResults.BadRequest(e.Message);
-        }
+        return !result.IsError
+            ? TypedResults.Created($"orders/carts/{cartId}", result.Value)
+            : TypedResults.BadRequest(result.FirstError.Description);
     }
 
-    public record CreateCartItemCommand(Guid CartId, Guid OfferId, Guid EventId) : IRequest<CartItemViewModel?>;
+    public record CreateCartItemCommand(Guid CartId, Guid OfferId, Guid EventId) : IRequest<ErrorOr<CartItemViewModel>>;
 
     public class CreateCartItemCommandHandler(TicketingDbContext dbContext, TimeProvider timeProvider)
-        : IRequestHandler<CreateCartItemCommand, CartItemViewModel?>
+        : IRequestHandler<CreateCartItemCommand, ErrorOr<CartItemViewModel>>
     {
-        public async Task<CartItemViewModel?> Handle(CreateCartItemCommand request, CancellationToken cancellationToken)
+        public async Task<ErrorOr<CartItemViewModel>> Handle(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
             if (await CartItemsAreNotFoundAsync(request))
             {
-                return null;
+                return Error.NotFound(description: "Cart, offer or event not found.");
             }
 
-            await ThrowIfSeatIsReservedAsync(request, cancellationToken);
+            var seatReserved = await CheckIfSeatIsReservedAsync(request, cancellationToken);
+            if (seatReserved.IsError)
+            {
+                return seatReserved.FirstError;
+            }
 
             var cartItem = new CartItem
             {
@@ -52,12 +49,12 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
                 CreatedAt = timeProvider.GetUtcNow()
             };
 
-            await TrySaveCartItemsAndReserveSeatsAsync(request, cartItem, cancellationToken);
-
-            return new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt);
+            var result = await TrySaveCartItemsAndReserveSeatsAsync(request, cartItem, cancellationToken);
+            
+            return result.IsError ? result.FirstError : new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt);
         }
 
-        private async Task TrySaveCartItemsAndReserveSeatsAsync(CreateCartItemCommand request,
+        private async Task<ErrorOr<Success>> TrySaveCartItemsAndReserveSeatsAsync(CreateCartItemCommand request,
             CartItem cartItem, CancellationToken cancellationToken)
         {
             try
@@ -66,11 +63,12 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
                 await ReserveSeatAsync(request, cancellationToken);
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
-            catch (DbUpdateException e)
+            catch (DbUpdateException)
             {
-                Console.WriteLine(e.Message);
-                throw new InvalidOperationException("This offer is already in the cart.", e.InnerException);
+                return Error.Conflict(description: "This offer is already in the cart.");
             }
+
+            return Result.Success;
         }
 
         private async Task<bool> CartItemsAreNotFoundAsync(CreateCartItemCommand request)
@@ -80,8 +78,7 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
                    await dbContext.Events.FindAsync(request.EventId) is null;
         }
 
-        private async Task ThrowIfSeatIsReservedAsync(CreateCartItemCommand request,
-            CancellationToken cancellationToken)
+        private async Task<ErrorOr<Success>> CheckIfSeatIsReservedAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
             var offer = await dbContext.Offers
                 .Include(x => x.Seat)
@@ -89,8 +86,10 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
 
             if (offer!.Seat.IsReserved)
             {
-                throw new InvalidOperationException("Seat is already reserved.");
+                return Error.Conflict(description: "This seat is already reserved.");
             }
+
+            return Result.Success;
         }
 
         private async Task ReserveSeatAsync(CreateCartItemCommand request, CancellationToken cancellationToken)

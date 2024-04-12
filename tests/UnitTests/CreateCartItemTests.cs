@@ -1,3 +1,4 @@
+using ErrorOr;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
@@ -77,7 +78,7 @@ public class CreateCartItemTests
                     It.Is<CreateCartItem.CreateCartItemCommand>(x =>
                         x.CartId == cartId && x.OfferId == offerId && x.EventId == eventId),
                     It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CartItemViewModel?)null);
+            .ReturnsAsync(Error.NotFound("", "Cart, Offer or Event not found."));
         var controller = new CreateCartItem(mediator.Object);
 
         var result =
@@ -96,18 +97,19 @@ public class CreateCartItemTests
         var eventId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Carts.AddAsync(
+            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
-        var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId),
-                CancellationToken.None));
-        Assert.That(exception?.Message, Is.EqualTo("This offer is already in the cart."));
+        var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId), CancellationToken.None);
+
+        Assert.That(result.FirstError.Type, Is.EqualTo(ErrorType.Conflict));
+        Assert.That(result.FirstError.Description, Is.EqualTo("This offer is already in the cart."));
     }
 
     [Test]
-    public async Task Handle_DatabaseHasValidCartWithReservedSeat_ThrowsInvalidOperationException()
+    public async Task Handle_DatabaseHasValidCartWithReservedSeat_ReturnsConflict()
     {
         var cartId = Guid.NewGuid();
         var offerId = Guid.NewGuid();
@@ -118,10 +120,10 @@ public class CreateCartItemTests
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
-        var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId),
-                CancellationToken.None));
-        Assert.That(exception?.Message, Is.EqualTo("Seat is already reserved."));
+        var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId), CancellationToken.None);
+
+        Assert.That(result.FirstError.Type, Is.EqualTo(ErrorType.Conflict));
+        Assert.That(result.FirstError.Description, Is.EqualTo("This seat is already reserved."));
     }
 
     [Test]
@@ -133,7 +135,8 @@ public class CreateCartItemTests
         var secondOfferId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Carts.AddAsync(
+            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
@@ -141,9 +144,9 @@ public class CreateCartItemTests
         var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, secondOfferId, eventId),
             CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<CartItemViewModel>());
-        Assert.That(result?.OfferId, Is.EqualTo(secondOfferId));
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result, Is.InstanceOf<ErrorOr<CartItemViewModel>>());
+        Assert.That(result.Value.OfferId, Is.EqualTo(secondOfferId));
     }
 
     [Test]
@@ -155,7 +158,8 @@ public class CreateCartItemTests
         var secondOfferId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Carts.AddAsync(
+            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
@@ -176,16 +180,16 @@ public class CreateCartItemTests
         var secondOfferId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+        await dbContext.Carts.AddAsync(
+            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
         await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
-        var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, secondOfferId, eventId),
-            CancellationToken.None);
+        var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, secondOfferId, eventId), CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<CartItemViewModel>());
-        Assert.That(result?.CreatedAt, Is.EqualTo(_utcNow));
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result, Is.InstanceOf<ErrorOr<CartItemViewModel>>());
+        Assert.That(result.Value.CreatedAt, Is.EqualTo(_utcNow));
     }
 }
