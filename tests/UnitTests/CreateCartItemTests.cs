@@ -56,7 +56,7 @@ public class CreateCartItemTests
         var controller = new CreateCartItem(mediator.Object);
 
         var result =
-            await controller.Create(cartId, new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId));
+            await controller.Create(cartId, new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId), CancellationToken.None);
         var createdResult = (Created<CartItemViewModel>)result.Result;
 
         mediator.VerifyAll();
@@ -82,7 +82,7 @@ public class CreateCartItemTests
         var controller = new CreateCartItem(mediator.Object);
 
         var result =
-            await controller.Create(cartId, new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId));
+            await controller.Create(cartId, new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId), CancellationToken.None);
         var badRequest = (BadRequest<string>)result.Result;
 
         mediator.VerifyAll();

@@ -15,9 +15,9 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
 {
     [HttpPost]
     [Route("orders/carts/{cartId:guid}")]
-    public async Task<Results<BadRequest<string>, Created<CartItemViewModel>>> Create(Guid cartId, CreateCartItemCommand command)
+    public async Task<Results<BadRequest<string>, Created<CartItemViewModel>>> Create(Guid cartId, CreateCartItemCommand command, CancellationToken token)
     {
-        var result = await mediator.Send(command with { CartId = cartId });
+        var result = await mediator.Send(command with { CartId = cartId }, token);
 
         return !result.IsError
             ? TypedResults.Created($"orders/carts/{cartId}", result.Value)
