@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.OpenApi.Models;
+using Ticketing;
 using Ticketing.Data;
 using Ticketing.Settings;
 using Vernou.Swashbuckle.HttpResultsAdapter;
@@ -31,6 +32,8 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddResponseCaching();
 builder.Services.AddOutputCache(opt => opt.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(cacheExpiration))
@@ -54,21 +57,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     c.DocInclusionPredicate((name, api) => true);
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
 
     c.OperationFilter<HttpResultsOperationFilter>();
 });
@@ -114,6 +102,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+app.UseExceptionHandler();
 
 app.UseHealthChecks("/_health", new HealthCheckOptions
 {
