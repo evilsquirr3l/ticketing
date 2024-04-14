@@ -4,7 +4,7 @@ namespace UnitTests;
 
 public class FakeItemsFactory
 {
-    public static Cart GetCartWithItems(Guid cartId, Guid offerId, Guid eventId, bool isSeatReserved)
+    public static Cart GetCartWithItems(Guid cartId, Guid offerId, Guid eventId, bool wasOfferTaken)
     {
         var @event = new Event
         {
@@ -57,7 +57,8 @@ public class FakeItemsFactory
                         {
                             SeatNumber = "Test Seat Number1",
                             Row = row,
-                        }
+                        },
+                        Payment = wasOfferTaken ? new Payment() : null
                     }
                 }
             }

@@ -36,10 +36,10 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
                 return Error.NotFound(description: "Cart, offer or event not found.");
             }
 
-            var seatReserved = await CheckIfSeatIsReservedAsync(request, cancellationToken);
-            if (seatReserved.IsError)
+            var offerIsTaken = await CheckIfOfferWasTaken(request, cancellationToken);
+            if (offerIsTaken.IsError)
             {
-                return seatReserved.FirstError;
+                return offerIsTaken.FirstError;
             }
 
             var cartItem = new CartItem
@@ -49,12 +49,13 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
                 CreatedAt = timeProvider.GetUtcNow()
             };
 
-            var result = await TrySaveCartItemsAndReserveSeatsAsync(request, cartItem, cancellationToken);
+            var result = await TrySaveCartItemsAsync(request, cartItem, cancellationToken);
             
             return result.IsError ? result.FirstError : new CartItemViewModel(cartItem.Id, cartItem.CartId, cartItem.OfferId, cartItem.CreatedAt);
         }
 
-        private async Task<ErrorOr<Success>> TrySaveCartItemsAndReserveSeatsAsync(CreateCartItemCommand request,
+        //for optimistic concurrency
+        private async Task<ErrorOr<Success>> TrySaveCartItemsAsync(CreateCartItemCommand request,
             CartItem cartItem, CancellationToken cancellationToken)
         {
             try
@@ -64,7 +65,7 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
             }
             catch (DbUpdateException)
             {
-                return Error.Conflict(description: "This offer is already in the cart.");
+                return Error.Conflict(description: "This offer was already taken.");
             }
 
             return Result.Success;
@@ -77,7 +78,7 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
                    await dbContext.Events.FindAsync(request.EventId) is null;
         }
 
-        private async Task<ErrorOr<Success>> CheckIfSeatIsReservedAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
+        private async Task<ErrorOr<Success>> CheckIfOfferWasTaken(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
             var offer = await dbContext.Offers
                 .Include(x => x.Payment)

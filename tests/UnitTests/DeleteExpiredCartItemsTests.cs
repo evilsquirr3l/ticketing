@@ -46,7 +46,7 @@ public class DeleteExpiredCartItemsTests
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
         var eventId = Guid.NewGuid();
-        var cartWithItems = FakeItemsFactory.GetCartWithItems(Guid.NewGuid(), Guid.NewGuid(), eventId, isSeatReserved: false);
+        var cartWithItems = FakeItemsFactory.GetCartWithItems(Guid.NewGuid(), Guid.NewGuid(), eventId, wasOfferTaken: false);
         await dbContext.Carts.AddAsync(cartWithItems);
         var offerWithItems = FakeItemsFactory.GetOfferWithItems(Guid.NewGuid(), eventId);
         await dbContext.Offers.AddAsync(offerWithItems);
@@ -72,7 +72,7 @@ public class DeleteExpiredCartItemsTests
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
         var eventId = Guid.NewGuid();
-        var cartWithItems = FakeItemsFactory.GetCartWithItems(Guid.NewGuid(), Guid.NewGuid(), eventId, isSeatReserved: false);
+        var cartWithItems = FakeItemsFactory.GetCartWithItems(Guid.NewGuid(), Guid.NewGuid(), eventId, wasOfferTaken: false);
         await dbContext.Carts.AddAsync(cartWithItems);
         var offerWithItems = FakeItemsFactory.GetOfferWithItems(Guid.NewGuid(), eventId);
         await dbContext.Offers.AddAsync(offerWithItems);

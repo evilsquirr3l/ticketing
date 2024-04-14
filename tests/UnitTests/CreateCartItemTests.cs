@@ -98,14 +98,33 @@ public class CreateCartItemTests
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(
-            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, wasOfferTaken: false));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
 
         var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId), CancellationToken.None);
 
         Assert.That(result.FirstError.Type, Is.EqualTo(ErrorType.Conflict));
-        Assert.That(result.FirstError.Description, Is.EqualTo("This offer is already in the cart."));
+        Assert.That(result.FirstError.Description, Is.EqualTo("This offer was already taken."));
+    }
+    
+    [Test]
+    public async Task Handle_DatabaseHasValidCartWithTakenOffer_ReturnsConflict()
+    {
+        var cartId = Guid.NewGuid();
+        var offerId = Guid.NewGuid();
+        var eventId = Guid.NewGuid();
+        await using var dbContext = new TicketingDbContext(_dbContextOptions);
+        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Carts.AddAsync(FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, wasOfferTaken: true));
+        await dbContext.SaveChangesAsync();
+        var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
+
+        var result = await handler.Handle(new CreateCartItem.CreateCartItemCommand(cartId, offerId, eventId), CancellationToken.None);
+
+        Assert.That(result, Is.InstanceOf<ErrorOr<CartItemViewModel>>());
+        Assert.That(result.FirstError.Type, Is.EqualTo(ErrorType.Conflict));
+        Assert.That(result.FirstError.Description, Is.EqualTo("This seat is already reserved."));
     }
 
     [Test]
@@ -118,7 +137,7 @@ public class CreateCartItemTests
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(
-            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, wasOfferTaken: false));
         await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
@@ -141,7 +160,7 @@ public class CreateCartItemTests
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(
-            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, isSeatReserved: false));
+            FakeItemsFactory.GetCartWithItems(cartId, offerId, eventId, wasOfferTaken: false));
         await dbContext.Offers.AddAsync(FakeItemsFactory.GetOfferWithItems(secondOfferId, eventId));
         await dbContext.SaveChangesAsync();
         var handler = new CreateCartItem.CreateCartItemCommandHandler(dbContext, _timeProvider.Object);
