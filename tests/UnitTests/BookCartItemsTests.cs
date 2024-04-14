@@ -107,22 +107,6 @@ public class BookCartItemsTests
     }
 
     [Test]
-    public async Task Handle_DatabaseHasValidCartWithItems_AllSeatsBecomeReserved()
-    {
-        var cartId = Guid.NewGuid();
-        await using var dbContext = new TicketingDbContext(_dbContextOptions);
-        await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
-        await dbContext.SaveChangesAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
-
-        await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
-        var seats = dbContext.Seats.ToList();
-
-        Assert.That(seats.TrueForAll(x => x.IsReserved), Is.True);
-    }
-
-    [Test]
     public async Task Handle_DatabaseDoesntHaveCart_ReturnsNull()
     {
         var cartId = Guid.NewGuid();
@@ -166,9 +150,8 @@ public class BookCartItemsTests
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
-        var store = new Mock<IOutputCacheStore>();
-        store.Setup(x => x.EvictByTagAsync(Tags.Events, It.IsAny<CancellationToken>()));
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, store.Object, _client.Object, _options);
+        _store.Setup(x => x.EvictByTagAsync(Tags.Events, It.IsAny<CancellationToken>()));
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
 
         await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 

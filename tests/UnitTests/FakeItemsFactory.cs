@@ -57,7 +57,6 @@ public class FakeItemsFactory
                         {
                             SeatNumber = "Test Seat Number1",
                             Row = row,
-                            IsReserved = isSeatReserved
                         }
                     }
                 }
@@ -98,7 +97,6 @@ public class FakeItemsFactory
                         }
                     }
                 },
-                IsReserved = false
             }
         };
     }

@@ -42,7 +42,6 @@ public class FailPayment(IMediator mediator) : ControllerBase
                 return null;
             }
 
-            offer.Seat.IsReserved = false;
             offer.PaymentId = null;
             
             await dbContext.SaveChangesAsync(cancellationToken);

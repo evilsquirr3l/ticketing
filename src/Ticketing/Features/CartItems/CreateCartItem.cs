@@ -60,7 +60,6 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
             try
             {
                 await dbContext.CartItems.AddAsync(cartItem, cancellationToken);
-                await ReserveSeatAsync(request, cancellationToken);
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException)
@@ -81,24 +80,15 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
         private async Task<ErrorOr<Success>> CheckIfSeatIsReservedAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
         {
             var offer = await dbContext.Offers
-                .Include(x => x.Seat)
+                .Include(x => x.Payment)
                 .FirstOrDefaultAsync(x => x.Id == request.OfferId, cancellationToken: cancellationToken);
 
-            if (offer!.Seat.IsReserved)
+            if (offer!.Payment is not null)
             {
                 return Error.Conflict(description: "This seat is already reserved.");
             }
 
             return Result.Success;
-        }
-
-        private async Task ReserveSeatAsync(CreateCartItemCommand request, CancellationToken cancellationToken)
-        {
-            var offer = await dbContext.Offers
-                .Include(x => x.Seat)
-                .FirstOrDefaultAsync(x => x.Id == request.OfferId, cancellationToken: cancellationToken);
-
-            offer!.Seat.IsReserved = true;
         }
     }
 }

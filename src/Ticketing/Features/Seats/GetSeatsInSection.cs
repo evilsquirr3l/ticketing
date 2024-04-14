@@ -47,7 +47,7 @@ public class GetSeatsInSection(IMediator mediator) : ControllerBase
                 .ToListAsync(cancellationToken: cancellationToken);
 
             var seatsViewModel = seats.Select(seat =>
-                new SeatViewModel(seat.Id, seat.SeatNumber, seat.IsReserved, seat.RowId));
+                new SeatViewModel(seat.Id, seat.SeatNumber, seat.RowId));
 
             return seatsViewModel;
         }

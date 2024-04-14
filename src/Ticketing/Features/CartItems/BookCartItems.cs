@@ -60,8 +60,6 @@ public class BookCartItems(IMediator mediator) : ControllerBase
             await store.EvictByTagAsync(Tags.Events, cancellationToken);
 
             var payment = await CreatePaymentAsync(cartItems);
-
-            await BookSeatsAsync(cartItems);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             var customer = cartItems[0].Cart.Customer;
@@ -86,18 +84,6 @@ public class BookCartItems(IMediator mediator) : ControllerBase
 
             await dbContext.Payments.AddAsync(payment);
             return payment;
-        }
-
-        private async Task BookSeatsAsync(List<CartItem> cartItems)
-        {
-            foreach (var cartItem in cartItems)
-            {
-                var seat = await dbContext.Seats.FindAsync(cartItem.Offer.SeatId);
-                if (seat is not null)
-                {
-                    seat.IsReserved = true;
-                }
-            }
         }
 
         private Task SendMessage(Message message)
