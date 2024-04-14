@@ -19,9 +19,9 @@ public class CreateCartItem(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(command with { CartId = cartId }, token);
 
-        return !result.IsError
-            ? TypedResults.Created($"orders/carts/{cartId}", result.Value)
-            : TypedResults.BadRequest(result.FirstError.Description);
+        return result.IsError
+            ? TypedResults.BadRequest(result.FirstError.Description)
+            : TypedResults.Created($"orders/carts/{cartId}", result.Value);
     }
 
     public record CreateCartItemCommand(Guid CartId, Guid OfferId, Guid EventId) : IRequest<ErrorOr<CartItemViewModel>>;
