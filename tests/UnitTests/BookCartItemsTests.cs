@@ -26,12 +26,18 @@ public class BookCartItemsTests
     private Mock<IOutputCacheStore> _store = new();
     private Mock<ServiceBusSender> _sender = new();
     private Mock<IAzureClientFactory<ServiceBusSender>> _client = new();
+    private Mock<TimeProvider> _timeProvider;
     private IOptions<ServiceBusSettings> _options = null!;
     private const string QueueName = "test";
+    private readonly DateTimeOffset _utcNow = new(2045, 1, 1, 1, 1, 1, TimeSpan.Zero);
 
     [OneTimeSetUp]
     public async Task Setup()
     {
+        _timeProvider = new Mock<TimeProvider>();
+        _timeProvider.Setup(x => x.GetUtcNow()).Returns(_utcNow);
+        _timeProvider.Setup(x => x.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+
         await _postgreSqlContainer.StartAsync();
         _dbContextOptions = new DbContextOptionsBuilder<TicketingDbContext>()
             .UseNpgsql(_postgreSqlContainer.GetConnectionString())
@@ -97,7 +103,7 @@ public class BookCartItemsTests
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options, _timeProvider.Object);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
@@ -112,7 +118,7 @@ public class BookCartItemsTests
         var cartId = Guid.NewGuid();
         await using var dbContext = new TicketingDbContext(_dbContextOptions);
         await dbContext.Database.EnsureCreatedAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options, _timeProvider.Object);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
@@ -135,7 +141,7 @@ public class BookCartItemsTests
             }
         });
         await dbContext.SaveChangesAsync();
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options, _timeProvider.Object);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
@@ -151,7 +157,7 @@ public class BookCartItemsTests
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
         _store.Setup(x => x.EvictByTagAsync(Tags.Events, It.IsAny<CancellationToken>()));
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options, _timeProvider.Object);
 
         await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
 
@@ -167,7 +173,7 @@ public class BookCartItemsTests
         await dbContext.Carts.AddAsync(GetCartWithItems(cartId));
         await dbContext.SaveChangesAsync();
         _sender.Setup(x => x.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()));
-        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options);
+        var handler = new BookCartItems.BookCartItemsCommandHandler(dbContext, _store.Object, _client.Object, _options, _timeProvider.Object);
 
         var result = await handler.Handle(new BookCartItems.BookCartItemsCommand(cartId), CancellationToken.None);
         var customer = await dbContext.Customers.FirstAsync();

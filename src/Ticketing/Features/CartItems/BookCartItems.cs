@@ -37,7 +37,8 @@ public class BookCartItems(IMediator mediator) : ControllerBase
         TicketingDbContext dbContext,
         IOutputCacheStore store,
         IAzureClientFactory<ServiceBusSender> serviceBusSenderFactory,
-        IOptions<ServiceBusSettings> settings)
+        IOptions<ServiceBusSettings> settings,
+        TimeProvider timeProvider)
         : IRequestHandler<BookCartItemsCommand, PaymentViewModel?>
     {
         private readonly ServiceBusSender _sender = serviceBusSenderFactory.CreateClient(settings.Value.QueueName);
@@ -79,7 +80,7 @@ public class BookCartItems(IMediator mediator) : ControllerBase
             var payment = new Payment
             {
                 Amount = cartItems.Sum(x => x.Offer.Price.Amount),
-                PaymentDate = DateTimeOffset.UtcNow
+                PaymentDate = timeProvider.GetUtcNow(),
             };
 
             await dbContext.Payments.AddAsync(payment);
