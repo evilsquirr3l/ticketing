@@ -7,31 +7,32 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNetCore.HealthChecks.AzureServiceBus" Version="8.0.0" />
-        <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.0" />
-        <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="8.0.0" />
-        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.0" />
-        <PackageReference Include="Azure.Identity" Version="1.10.4" />
-        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.1" />
+        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.1" />
+        <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="8.0.1" />
+        <PackageReference Include="AspNetCore.HealthChecks.AzureServiceBus" Version="8.0.1" />
+        <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.1" />
+        <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="8.0.1" />
+        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.1" />
+        <PackageReference Include="Azure.Identity" Version="1.12.0" />
+        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.5" />
         <PackageReference Include="ErrorOr" Version="2.0.1" />
-        <PackageReference Include="MediatR" Version="12.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OutputCaching.StackExchangeRedis" Version="8.0.0" />
+        <PackageReference Include="MediatR" Version="12.3.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.6" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.6">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.1" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+        <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.4" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
         <PackageReference Include="Vernou.Swashbuckle.HttpResultsAdapter" Version="1.0.2" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\SharedModels\SharedModels.csproj" />
+      <ProjectReference Include="..\Ticketing.ServiceDefaults\Ticketing.ServiceDefaults.csproj" />
     </ItemGroup>
 
 </Project>

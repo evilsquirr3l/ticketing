@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsAspireHost>true</IsAspireHost>
+        <UserSecretsId>E3FCE84D-7F93-4E97-9D6F-ECF46231A6A9</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="8.0.1"/>
+        <PackageReference Include="Aspire.Hosting.Azure.Redis" Version="8.0.1" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="8.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Ticketing\Ticketing.csproj" />
+    </ItemGroup>
+
+</Project>

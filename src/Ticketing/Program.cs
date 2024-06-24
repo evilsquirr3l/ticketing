@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
-using Microsoft.OpenApi.Models;
 using Ticketing;
 using Ticketing.Data;
 using Ticketing.Settings;
 using Vernou.Swashbuckle.HttpResultsAdapter;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 var postgresConnectionString = builder.Configuration.GetValue<string>("POSTGRESQLCONNSTR_DatabaseConnection");
 var redisConnectionString = builder.Configuration.GetValue<string>("RedisCacheCONNSTR_RedisConnection");
@@ -36,8 +36,6 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddResponseCaching();
-builder.Services.AddOutputCache(opt => opt.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(cacheExpiration))
-    .AddStackExchangeRedisOutputCache(options => { options.Configuration = redisConnectionString; });
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -64,7 +62,18 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
-builder.Services.AddDbContextPool<TicketingDbContext>(x => { x.UseNpgsql(postgresConnectionString); });
+if (builder.Environment.IsDevelopment())
+{
+    builder.AddNpgsqlDbContext<TicketingDbContext>("postgresdb");
+    builder.Services.AddOutputCache(opt => opt.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(cacheExpiration));
+}
+else
+{
+    builder.Services.AddDbContextPool<TicketingDbContext>(x => { x.UseNpgsql(postgresConnectionString); });
+    builder.Services
+        .AddOutputCache(opt => opt.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(cacheExpiration))
+        .AddStackExchangeRedisOutputCache(options => { options.Configuration = redisConnectionString; });
+}
 
 builder.Services.AddAzureClients(clientBuilder =>
 {
